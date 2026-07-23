@@ -24,7 +24,7 @@ let db;
 let bucket;
 
 // ============================================
-// MONGODB CONNECTION - Optimized for Your String
+// MONGODB CONNECTION
 // ============================================
 async function connectToMongoDB() {
   try {
@@ -34,45 +34,36 @@ async function connectToMongoDB() {
 
     console.log('🔄 Connecting to MongoDB Atlas...');
     console.log(`📁 Database: ${DB_NAME}`);
-    console.log(`🔗 Using non-SRV connection string`);
 
-    // Options optimized for your connection string
     const client = new MongoClient(MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       serverSelectionTimeoutMS: 30000,
       socketTimeoutMS: 45000,
       connectTimeoutMS: 30000,
-      // SSL/TLS settings
       ssl: true,
-      sslValidate: false, // Set to true in production with proper certificates
+      sslValidate: false,
       tls: true,
       tlsAllowInvalidCertificates: true,
       tlsAllowInvalidHostnames: true,
       rejectUnauthorized: false,
-      // Authentication
       authSource: 'admin',
       retryWrites: true,
       w: 'majority'
     });
 
-    // Connect to MongoDB
     await client.connect();
     console.log('✅ MongoDB connected successfully');
 
-    // Get the database
     db = client.db(DB_NAME);
     
-    // Test the connection
     await db.command({ ping: 1 });
     console.log('✅ Database ping successful');
 
-    // Create GridFS bucket
     bucket = new GridFSBucket(db, {
       bucketName: 'uploads'
     });
 
-    // Create indexes
     try {
       await db.collection('uploads.files').createIndex({ filename: 1 });
       await db.collection('uploads.files').createIndex({ uploadDate: -1 });
@@ -93,9 +84,6 @@ async function connectToMongoDB() {
     console.error('1. Check your password in .env file');
     console.error('2. Make sure your IP is whitelisted in MongoDB Atlas');
     console.error('3. Verify the database user has correct permissions');
-    console.error('4. Check if your network allows MongoDB connections');
-    console.error('\n📝 Your connection string format:');
-    console.error('mongodb://username:password@host1:port,host2:port,host3:port/?ssl=true&replicaSet=...');
     process.exit(1);
   }
 }
@@ -119,6 +107,19 @@ function formatFileSize(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
+function extractFileId(idWithExtension) {
+  // Remove .mp4, .mov, .avi, .mkv, .webm, etc. if present
+  const videoExtensions = ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.mpeg', '.3gp', '.flv'];
+  let cleanId = idWithExtension;
+  for (const ext of videoExtensions) {
+    if (cleanId.endsWith(ext)) {
+      cleanId = cleanId.slice(0, -ext.length);
+      break;
+    }
+  }
+  return cleanId;
+}
+
 // ============================================
 // MULTER CONFIGURATION
 // ============================================
@@ -126,14 +127,10 @@ const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
   const allowedMimeTypes = [
-    // Images
     'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
-    // Videos
     'video/mp4', 'video/mpeg', 'video/quicktime', 'video/x-msvideo', 
     'video/x-matroska', 'video/webm', 'video/ogg', 'video/3gpp',
-    // Audio
     'audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/aac', 'audio/flac',
-    // Documents
     'application/pdf', 'application/zip', 'application/x-zip-compressed',
     'application/msword',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -141,7 +138,6 @@ const fileFilter = (req, file, cb) => {
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     'application/vnd.ms-powerpoint',
     'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-    // Text
     'text/plain', 'text/csv', 'text/html'
   ];
   
@@ -234,6 +230,7 @@ app.post('/upload', (req, res) => {
           contentType: file.mimetype,
           fileSize: file.size,
           fileUrl: `/file/${uploadStream.id.toString()}`,
+          streamingUrl: isVideo ? `/stream/${uploadStream.id.toString()}` : null,
           database: DB_NAME
         });
       });
@@ -257,7 +254,7 @@ app.post('/upload', (req, res) => {
 });
 
 // 2. Video Upload
-app.post('/upload/video.mp4', (req, res) => {
+app.post('/upload/video', (req, res) => {
   videoUpload(req, res, async (err) => {
     if (err) {
       console.error('Video upload error:', err);
@@ -300,7 +297,7 @@ app.post('/upload/video.mp4', (req, res) => {
       const uploadStream = bucket.openUploadStream(uniqueFilename, {
         contentType: file.mimetype,
         metadata: metadata,
-        chunkSizeBytes: 261120 // 255KB chunks for video streaming
+        chunkSizeBytes: 261120
       });
 
       uploadStream.write(file.buffer);
@@ -342,19 +339,23 @@ app.post('/upload/video.mp4', (req, res) => {
   });
 });
 
-// 3. Stream Video (with range support)
-app.get('/stream/:id.mp4', async (req, res) => {
+// 3. STREAM VIDEO - FIXED to handle .mp4 extensions
+app.get('/stream/:id', async (req, res) => {
   try {
-    const fileId = req.params.id;
+    // Extract and clean the file ID (remove .mp4 if present)
+    let fileId = req.params.id;
+    const cleanId = extractFileId(fileId);
     
-    if (!ObjectId.isValid(fileId)) {
+    console.log(`🔍 Streaming request for: ${fileId} -> Clean ID: ${cleanId}`);
+    
+    if (!ObjectId.isValid(cleanId)) {
       return res.status(400).json({
         success: false,
         message: 'Invalid file ID format'
       });
     }
 
-    const id = new ObjectId(fileId);
+    const id = new ObjectId(cleanId);
     const files = await db.collection('uploads.files').find({ _id: id }).toArray();
     
     if (files.length === 0) {
@@ -438,19 +439,23 @@ app.get('/stream/:id.mp4', async (req, res) => {
   }
 });
 
-// 4. Get File
+// 4. GET FILE - Fixed to handle .mp4 extensions for download
 app.get('/file/:id', async (req, res) => {
   try {
-    const fileId = req.params.id;
+    // Extract and clean the file ID (remove .mp4 if present)
+    let fileId = req.params.id;
+    const cleanId = extractFileId(fileId);
     
-    if (!ObjectId.isValid(fileId)) {
+    console.log(`📥 Download request for: ${fileId} -> Clean ID: ${cleanId}`);
+    
+    if (!ObjectId.isValid(cleanId)) {
       return res.status(400).json({
         success: false,
         message: 'Invalid file ID format'
       });
     }
 
-    const id = new ObjectId(fileId);
+    const id = new ObjectId(cleanId);
     const files = await db.collection('uploads.files').find({ _id: id }).toArray();
     
     if (files.length === 0) {
@@ -464,7 +469,7 @@ app.get('/file/:id', async (req, res) => {
     const isVideo = file.contentType && file.contentType.startsWith('video/');
     
     if (isVideo && req.query.stream !== 'false') {
-      return res.redirect(`/stream/${fileId}`);
+      return res.redirect(`/stream/${cleanId}`);
     }
 
     res.set({
@@ -524,20 +529,29 @@ app.get('/files', async (req, res) => {
       .limit(limit)
       .toArray();
 
-    const fileList = files.map(file => ({
-      id: file._id.toString(),
-      filename: file.metadata?.originalName || file.filename,
-      contentType: file.contentType || 'application/octet-stream',
-      fileSize: file.length,
-      fileSizeFormatted: formatFileSize(file.length),
-      uploadDate: file.uploadDate,
-      uploadDateFormatted: new Date(file.uploadDate).toLocaleString(),
-      url: `/file/${file._id.toString()}`,
-      streamingUrl: file.contentType?.startsWith('video/') ? `/stream/${file._id.toString()}` : null,
-      isVideo: file.contentType?.startsWith('video/') || false,
-      isImage: file.contentType?.startsWith('image/') || false,
-      metadata: file.metadata || {}
-    }));
+    const fileList = files.map(file => {
+      const isVideo = file.contentType && file.contentType.startsWith('video/');
+      const isImage = file.contentType && file.contentType.startsWith('image/');
+      const fileId = file._id.toString();
+      
+      return {
+        id: fileId,
+        filename: file.metadata?.originalName || file.filename,
+        contentType: file.contentType || 'application/octet-stream',
+        fileSize: file.length,
+        fileSizeFormatted: formatFileSize(file.length),
+        uploadDate: file.uploadDate,
+        uploadDateFormatted: new Date(file.uploadDate).toLocaleString(),
+        // Support both with and without .mp4 extension
+        url: `/file/${fileId}`,
+        urlWithExtension: isVideo ? `/file/${fileId}.mp4` : `/file/${fileId}`,
+        streamingUrl: isVideo ? `/stream/${fileId}` : null,
+        streamingUrlWithExtension: isVideo ? `/stream/${fileId}.mp4` : null,
+        isVideo: isVideo,
+        isImage: isImage,
+        metadata: file.metadata || {}
+      };
+    });
 
     res.json({
       success: true,
@@ -563,16 +577,17 @@ app.get('/files', async (req, res) => {
 // 6. Delete File
 app.delete('/file/:id', async (req, res) => {
   try {
-    const fileId = req.params.id;
+    let fileId = req.params.id;
+    const cleanId = extractFileId(fileId);
     
-    if (!ObjectId.isValid(fileId)) {
+    if (!ObjectId.isValid(cleanId)) {
       return res.status(400).json({
         success: false,
         message: 'Invalid file ID format'
       });
     }
 
-    const id = new ObjectId(fileId);
+    const id = new ObjectId(cleanId);
     
     const files = await db.collection('uploads.files').find({ _id: id }).toArray();
     if (files.length === 0) {
@@ -653,7 +668,41 @@ app.get('/health', (req, res) => {
     uptime: process.uptime(),
     database: DB_NAME,
     connected: !!db,
-    nodeVersion: process.version
+    nodeVersion: process.version,
+    endpoints: {
+      upload: '/upload',
+      uploadVideo: '/upload/video',
+      stream: '/stream/:id (supports .mp4 extension)',
+      file: '/file/:id (supports .mp4 extension)',
+      files: '/files',
+      stats: '/stats',
+      delete: '/file/:id',
+      health: '/health'
+    }
+  });
+});
+
+// 9. Redirect for root - show API info
+app.get('/', (req, res) => {
+  res.json({
+    name: 'File Upload API',
+    version: '1.0.0',
+    database: DB_NAME,
+    endpoints: {
+      'POST /upload': 'Upload any file',
+      'POST /upload/video': 'Upload video with metadata',
+      'GET /stream/:id': 'Stream video (supports .mp4 extension)',
+      'GET /file/:id': 'Download file (supports .mp4 extension)',
+      'GET /files': 'List all files',
+      'GET /stats': 'Get statistics',
+      'DELETE /file/:id': 'Delete file',
+      'GET /health': 'Health check'
+    },
+    example: {
+      stream: 'https://filevideouploader.onrender.com/stream/8fd2b990b2c7199da7bbb58b5cb3301c',
+      streamWithExtension: 'https://filevideouploader.onrender.com/stream/8fd2b990b2c7199da7bbb58b5cb3301c.mp4',
+      download: 'https://filevideouploader.onrender.com/file/8fd2b990b2c7199da7bbb58b5cb3301c'
+    }
   });
 });
 
@@ -681,12 +730,14 @@ async function startServer() {
     console.log('\n📌 API Endpoints:');
     console.log(`   POST   /upload           - Upload any file`);
     console.log(`   POST   /upload/video     - Upload video file`);
-    console.log(`   GET    /file/:id         - Get file`);
-    console.log(`   GET    /stream/:id       - Stream video with range support`);
+    console.log(`   GET    /stream/:id       - Stream video (supports .mp4)`);
+    console.log(`   GET    /file/:id         - Get file (supports .mp4)`);
     console.log(`   GET    /files            - List all files`);
     console.log(`   GET    /stats            - Get statistics`);
     console.log(`   GET    /health           - Health check`);
     console.log(`   DELETE /file/:id         - Delete file`);
+    console.log('\n✨ Now supports URLs with .mp4 extension!');
+    console.log(`   Example: /stream/8fd2b990b2c7199da7bbb58b5cb3301c.mp4`);
   });
 }
 
