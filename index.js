@@ -10,20 +10,21 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ============================================
-// MINIMAL CORS - Allow everything
+// MIDDLEWARE
 // ============================================
-app.use(cors()); // Allow all origins
-app.options('*', cors()); // Handle preflight
-
-app.use(express.json({ limit: '500mb' })); // For base64 uploads
+app.use(cors());
+app.options('*', cors());
+app.use(express.json({ limit: '500mb' }));
 app.use(express.urlencoded({ extended: true, limit: '500mb' }));
 app.use(express.static('public'));
 
-// Configuration
+// ============================================
+// CONFIGURATION
+// ============================================
 const MONGODB_URI = process.env.MONGODB_URI;
 const DB_NAME = process.env.DB_NAME || 'videos';
-const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE) || 500 * 1024 * 1024; // 500MB
-const MAX_VIDEO_SIZE = parseInt(process.env.MAX_VIDEO_SIZE) || 1000 * 1024 * 1024; // 1GB
+const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE) || 500 * 1024 * 1024;
+const MAX_VIDEO_SIZE = parseInt(process.env.MAX_VIDEO_SIZE) || 1000 * 1024 * 1024;
 
 let db;
 let bucket;
@@ -72,6 +73,7 @@ async function connectToMongoDB() {
     try {
       await db.collection('uploads.files').createIndex({ filename: 1 });
       await db.collection('uploads.files').createIndex({ uploadDate: -1 });
+      await db.collection('uploads.files').createIndex({ 'metadata.originalName': 1 });
       console.log('✅ Indexes created successfully');
     } catch (indexError) {
       console.warn('⚠️ Index creation warning:', indexError.message);
@@ -120,7 +122,7 @@ function extractFileId(idWithExtension) {
 }
 
 // ============================================
-// MULTER CONFIGURATION (for POST uploads)
+// MULTER CONFIGURATION
 // ============================================
 const storage = multer.memoryStorage();
 
@@ -179,7 +181,45 @@ const videoUpload = multer({
 // API ENDPOINTS
 // ============================================
 
-// 1. POST Upload (Standard)
+// 1. GET ALL FILES
+app.get('/files', async (req, res) => {
+  try {
+    const files = await db.collection('uploads.files')
+      .find({})
+      .sort({ uploadDate: -1 })
+      .toArray();
+
+    const fileList = files.map(file => ({
+      id: file._id.toString(),
+      filename: file.metadata?.originalName || file.filename,
+      uniqueFilename: file.filename,
+      contentType: file.contentType || 'application/octet-stream',
+      fileSize: file.length,
+      fileSizeFormatted: formatFileSize(file.length),
+      uploadDate: file.uploadDate,
+      uploadDateFormatted: new Date(file.uploadDate).toLocaleString(),
+      url: `/file/${file._id.toString()}`,
+      streamingUrl: file.contentType?.startsWith('video/') ? `/stream/${file._id.toString()}` : null,
+      isVideo: file.contentType?.startsWith('video/') || false,
+      metadata: file.metadata || {}
+    }));
+
+    res.json({
+      success: true,
+      files: fileList,
+      total: fileList.length
+    });
+
+  } catch (error) {
+    console.error('File listing error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error retrieving file list'
+    });
+  }
+});
+
+// 2. UPLOAD FILE
 app.post('/upload', (req, res) => {
   upload.single('file')(req, res, async (err) => {
     if (err) {
@@ -209,7 +249,8 @@ app.post('/upload', (req, res) => {
         isVideo: isVideo,
         fileSize: file.size,
         contentType: file.mimetype,
-        database: DB_NAME
+        database: DB_NAME,
+        title: req.body.title || file.originalname
       };
 
       const uploadStream = bucket.openUploadStream(uniqueFilename, {
@@ -251,165 +292,11 @@ app.post('/upload', (req, res) => {
   });
 });
 
-// 2. GET Upload - Upload video using base64 in URL
-app.get('/upload', async (req, res) => {
-  try {
-    const { url, filename, title } = req.query;
-    
-    if (!url) {
-      return res.status(400).json({
-        success: false,
-        message: 'Missing url parameter. Usage: /upload?url=base64_encoded_video&filename=video.mp4'
-      });
-    }
-
-    // Decode base64
-    const videoBuffer = Buffer.from(url, 'base64');
-    const originalName = filename || 'video.mp4';
-    const uniqueFilename = generateUniqueFilename(originalName);
-    const isVideo = true;
-    
-    const metadata = {
-      originalName: originalName,
-      uniqueName: uniqueFilename,
-      uploadDate: new Date(),
-      isVideo: isVideo,
-      fileSize: videoBuffer.length,
-      contentType: 'video/mp4',
-      database: DB_NAME,
-      title: title || originalName,
-      uploadMethod: 'GET'
-    };
-
-    const uploadStream = bucket.openUploadStream(uniqueFilename, {
-      contentType: 'video/mp4',
-      metadata: metadata,
-      chunkSizeBytes: 261120
-    });
-
-    uploadStream.write(videoBuffer);
-    uploadStream.end();
-
-    uploadStream.on('finish', () => {
-      res.json({
-        success: true,
-        message: 'Video uploaded successfully via GET',
-        fileId: uploadStream.id.toString(),
-        filename: originalName,
-        contentType: 'video/mp4',
-        fileSize: videoBuffer.length,
-        fileUrl: `/file/${uploadStream.id.toString()}`,
-        streamingUrl: `/stream/${uploadStream.id.toString()}`,
-        streamingUrlWithExtension: `/stream/${uploadStream.id.toString()}.mp4`
-      });
-    });
-
-    uploadStream.on('error', (error) => {
-      console.error('GridFS upload error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error uploading video to database'
-      });
-    });
-
-  } catch (error) {
-    console.error('GET upload error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error processing video upload',
-      error: error.message
-    });
-  }
-});
-
-// 3. POST Video Upload
-app.post('/upload/video', (req, res) => {
-  videoUpload(req, res, async (err) => {
-    if (err) {
-      console.error('Video upload error:', err);
-      return res.status(400).json({
-        success: false,
-        message: err.message || 'Video upload failed'
-      });
-    }
-
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: 'No video file uploaded'
-      });
-    }
-
-    try {
-      const file = req.file;
-      const uniqueFilename = generateUniqueFilename(file.originalname);
-      
-      const metadata = {
-        originalName: file.originalname,
-        uniqueName: uniqueFilename,
-        uploadDate: new Date(),
-        isVideo: true,
-        fileSize: file.size,
-        contentType: file.mimetype,
-        database: DB_NAME,
-        title: req.body.title || file.originalname,
-        description: req.body.description || '',
-        category: req.body.category || 'Uncategorized',
-        tags: req.body.tags ? req.body.tags.split(',').map(t => t.trim()) : []
-      };
-
-      const uploadStream = bucket.openUploadStream(uniqueFilename, {
-        contentType: file.mimetype,
-        metadata: metadata,
-        chunkSizeBytes: 261120
-      });
-
-      uploadStream.write(file.buffer);
-      uploadStream.end();
-
-      uploadStream.on('finish', () => {
-        res.json({
-          success: true,
-          message: 'Video uploaded successfully',
-          fileId: uploadStream.id.toString(),
-          filename: file.originalname,
-          contentType: file.mimetype,
-          fileSize: file.size,
-          title: metadata.title,
-          description: metadata.description,
-          category: metadata.category,
-          tags: metadata.tags,
-          fileUrl: `/file/${uploadStream.id.toString()}`,
-          streamingUrl: `/stream/${uploadStream.id.toString()}`,
-          streamingUrlWithExtension: `/stream/${uploadStream.id.toString()}.mp4`
-        });
-      });
-
-      uploadStream.on('error', (error) => {
-        console.error('GridFS upload error:', error);
-        res.status(500).json({
-          success: false,
-          message: 'Error uploading video to database'
-        });
-      });
-
-    } catch (error) {
-      console.error('Video upload error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error during video upload'
-      });
-    }
-  });
-});
-
-// 4. STREAM VIDEO - Supports .mp4 extensions
+// 3. STREAM VIDEO
 app.get('/stream/:id', async (req, res) => {
   try {
     let fileId = req.params.id;
     const cleanId = extractFileId(fileId);
-    
-    console.log(`🔍 Streaming: ${fileId} -> ${cleanId}`);
     
     if (!ObjectId.isValid(cleanId)) {
       return res.status(400).json({
@@ -502,7 +389,7 @@ app.get('/stream/:id', async (req, res) => {
   }
 });
 
-// 5. GET FILE - Supports .mp4 extensions
+// 4. GET FILE
 app.get('/file/:id', async (req, res) => {
   try {
     let fileId = req.params.id;
@@ -561,90 +448,86 @@ app.get('/file/:id', async (req, res) => {
   }
 });
 
-// 6. List Files
-app.get('/files', async (req, res) => {
+// 5. RENAME FILE (PATCH)
+app.patch('/file/:id', async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 50;
-    const skip = (page - 1) * limit;
-    const type = req.query.type;
-    
-    let filter = {};
-    if (type === 'video') {
-      filter = { 'contentType': { $regex: '^video/' } };
-    } else if (type === 'image') {
-      filter = { 'contentType': { $regex: '^image/' } };
-    } else if (type === 'audio') {
-      filter = { 'contentType': { $regex: '^audio/' } };
-    } else if (type === 'document') {
-      filter = { 'contentType': { $regex: '^(application/|text/)' } };
+    const fileId = req.params.id;
+    const { filename } = req.body;
+
+    if (!filename || !filename.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Filename is required'
+      });
     }
-    
-    const totalFiles = await db.collection('uploads.files').countDocuments(filter);
-    
-    const files = await db.collection('uploads.files')
-      .find(filter)
-      .sort({ uploadDate: -1 })
-      .skip(skip)
-      .limit(limit)
-      .toArray();
 
-    const fileList = files.map(file => {
-      const isVideo = file.contentType && file.contentType.startsWith('video/');
-      const fileId = file._id.toString();
-      
-      return {
-        id: fileId,
-        filename: file.metadata?.originalName || file.filename,
-        contentType: file.contentType || 'application/octet-stream',
-        fileSize: file.length,
-        fileSizeFormatted: formatFileSize(file.length),
-        uploadDate: file.uploadDate,
-        uploadDateFormatted: new Date(file.uploadDate).toLocaleString(),
-        url: `/file/${fileId}`,
-        urlWithExtension: isVideo ? `/file/${fileId}.mp4` : `/file/${fileId}`,
-        streamingUrl: isVideo ? `/stream/${fileId}` : null,
-        streamingUrlWithExtension: isVideo ? `/stream/${fileId}.mp4` : null,
-        isVideo: isVideo,
-        metadata: file.metadata || {}
-      };
-    });
-
-    res.json({
-      success: true,
-      files: fileList,
-      pagination: {
-        currentPage: page,
-        totalPages: Math.ceil(totalFiles / limit),
-        totalFiles: totalFiles,
-        limit: limit
-      }
-    });
-
-  } catch (error) {
-    console.error('File listing error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error retrieving file list'
-    });
-  }
-});
-
-// 7. Delete File
-app.delete('/file/:id', async (req, res) => {
-  try {
-    let fileId = req.params.id;
-    const cleanId = extractFileId(fileId);
-    
-    if (!ObjectId.isValid(cleanId)) {
+    if (!ObjectId.isValid(fileId)) {
       return res.status(400).json({
         success: false,
         message: 'Invalid file ID format'
       });
     }
 
-    const id = new ObjectId(cleanId);
+    const id = new ObjectId(fileId);
     
+    // Check if file exists
+    const files = await db.collection('uploads.files').find({ _id: id }).toArray();
+    if (files.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'File not found'
+      });
+    }
+
+    // Update the filename in metadata
+    const result = await db.collection('uploads.files').updateOne(
+      { _id: id },
+      { 
+        $set: { 
+          'metadata.originalName': filename.trim(),
+          'metadata.lastModified': new Date()
+        } 
+      }
+    );
+
+    if (result.modifiedCount === 0) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to rename file'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'File renamed successfully',
+      fileId: fileId,
+      newFilename: filename.trim()
+    });
+
+  } catch (error) {
+    console.error('Rename error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error renaming file: ' + error.message
+    });
+  }
+});
+
+// 6. DELETE FILE
+app.delete('/file/:id', async (req, res) => {
+  try {
+    const fileId = req.params.id;
+    
+    if (!ObjectId.isValid(fileId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid file ID format'
+      });
+    }
+
+    const id = new ObjectId(fileId);
+    
+    // Check if file exists
     const files = await db.collection('uploads.files').find({ _id: id }).toArray();
     if (files.length === 0) {
       return res.status(404).json({
@@ -654,6 +537,8 @@ app.delete('/file/:id', async (req, res) => {
     }
 
     const file = files[0];
+    
+    // Delete the file from GridFS
     await bucket.delete(id);
 
     res.json({
@@ -666,56 +551,15 @@ app.delete('/file/:id', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('File deletion error:', error);
+    console.error('Delete error:', error);
     res.status(500).json({
       success: false,
-      message: 'Error deleting file'
+      message: 'Error deleting file: ' + error.message
     });
   }
 });
 
-// 8. Statistics
-app.get('/stats', async (req, res) => {
-  try {
-    const totalFiles = await db.collection('uploads.files').countDocuments();
-    const videoFiles = await db.collection('uploads.files').countDocuments({
-      contentType: { $regex: '^video/' }
-    });
-    const imageFiles = await db.collection('uploads.files').countDocuments({
-      contentType: { $regex: '^image/' }
-    });
-    const audioFiles = await db.collection('uploads.files').countDocuments({
-      contentType: { $regex: '^audio/' }
-    });
-    
-    const totalSizeResult = await db.collection('uploads.files').aggregate([
-      { $group: { _id: null, total: { $sum: '$length' } } }
-    ]).toArray();
-    const totalSize = totalSizeResult.length > 0 ? totalSizeResult[0].total : 0;
-
-    res.json({
-      success: true,
-      stats: {
-        totalFiles: totalFiles,
-        totalSize: totalSize,
-        totalSizeFormatted: formatFileSize(totalSize),
-        videoFiles: videoFiles,
-        imageFiles: imageFiles,
-        audioFiles: audioFiles,
-        otherFiles: totalFiles - (videoFiles + imageFiles + audioFiles)
-      }
-    });
-
-  } catch (error) {
-    console.error('Stats error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error retrieving statistics'
-    });
-  }
-});
-
-// 9. Health Check
+// 7. HEALTH CHECK
 app.get('/health', (req, res) => {
   res.json({
     status: 'OK',
@@ -727,28 +571,20 @@ app.get('/health', (req, res) => {
   });
 });
 
-// 10. Root Route
+// 8. ROOT
 app.get('/', (req, res) => {
   res.json({
-    name: 'File Upload API (Unrestricted)',
-    version: '1.0.0',
+    name: 'Jay Video Hub API',
+    version: '2.0.0',
     database: DB_NAME,
     endpoints: {
-      'POST /upload': 'Upload any file (multipart/form-data)',
-      'GET /upload': 'Upload video via base64 (url parameter)',
-      'POST /upload/video': 'Upload video with metadata',
-      'GET /stream/:id': 'Stream video (supports .mp4 extension)',
-      'GET /file/:id': 'Download file (supports .mp4 extension)',
       'GET /files': 'List all files',
-      'GET /stats': 'Get statistics',
-      'DELETE /file/:id': 'Delete file',
+      'POST /upload': 'Upload a file',
+      'GET /file/:id': 'Download a file',
+      'GET /stream/:id': 'Stream a video',
+      'PATCH /file/:id': 'Rename a file',
+      'DELETE /file/:id': 'Delete a file',
       'GET /health': 'Health check'
-    },
-    example: {
-      uploadVideo: '/upload?url=BASE64_VIDEO_DATA&filename=video.mp4',
-      stream: '/stream/8fd2b990b2c7199da7bbb58b5cb3301c',
-      streamWithExtension: '/stream/8fd2b990b2c7199da7bbb58b5cb3301c.mp4',
-      download: '/file/8fd2b990b2c7199da7bbb58b5cb3301c'
     }
   });
 });
@@ -771,17 +607,15 @@ async function startServer() {
   app.listen(PORT, () => {
     console.log(`\n🚀 Server running on http://localhost:${PORT}`);
     console.log(`📁 Database: ${DB_NAME}`);
-    console.log(`🌐 CORS: All origins allowed (unrestricted)`);
+    console.log(`🌐 CORS: All origins allowed`);
     console.log('\n📌 API Endpoints:');
-    console.log(`   POST   /upload           - Upload any file`);
-    console.log(`   GET    /upload           - Upload video via base64`);
-    console.log(`   POST   /upload/video     - Upload video with metadata`);
-    console.log(`   GET    /stream/:id       - Stream video (supports .mp4)`);
-    console.log(`   GET    /file/:id         - Get file (supports .mp4)`);
-    console.log(`   GET    /files            - List all files`);
-    console.log(`   GET    /stats            - Get statistics`);
-    console.log(`   GET    /health           - Health check`);
-    console.log(`   DELETE /file/:id         - Delete file`);
+    console.log(`   GET    /files           - List all files`);
+    console.log(`   POST   /upload          - Upload a file`);
+    console.log(`   GET    /file/:id        - Download a file`);
+    console.log(`   GET    /stream/:id      - Stream a video`);
+    console.log(`   PATCH  /file/:id        - Rename a file`);
+    console.log(`   DELETE /file/:id        - Delete a file`);
+    console.log(`   GET    /health          - Health check`);
   });
 }
 
