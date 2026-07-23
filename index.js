@@ -257,7 +257,7 @@ app.post('/upload', (req, res) => {
 });
 
 // 2. Video Upload
-app.post('/upload/video', (req, res) => {
+app.post('/upload/video.mp4', (req, res) => {
   videoUpload(req, res, async (err) => {
     if (err) {
       console.error('Video upload error:', err);
@@ -343,7 +343,7 @@ app.post('/upload/video', (req, res) => {
 });
 
 // 3. Stream Video (with range support)
-app.get('/stream/:id', async (req, res) => {
+app.get('/stream/:id.mp4', async (req, res) => {
   try {
     const fileId = req.params.id;
     
