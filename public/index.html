@@ -3,12 +3,15 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
-    <title>Jay Video Hub · File Manager</title>
+    <title>Jay Video Hub · social player</title>
+    <!-- Google Fonts: Poppins -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <!-- Font Awesome 6 (free) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <style>
+        /* ---------- RESET & BASE ---------- */
         * {
             margin: 0;
             padding: 0;
@@ -19,302 +22,560 @@
             background: #0b0b14;
             color: #eee;
             min-height: 100vh;
-            padding: 20px;
+            display: flex;
+            justify-content: center;
+            padding: 0.8rem;
+            transition: background 0.3s;
         }
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
+        body.light {
+            background: #f0f2f5;
+            color: #1a1a2e;
+        }
+        #app {
+            max-width: 1440px;
+            width: 100%;
         }
 
-        /* Header */
-        .header {
+        /* ---------- LOADING ---------- */
+        #loading-screen {
+            position: fixed;
+            inset: 0;
+            background: #0b0b14;
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
             align-items: center;
-            padding: 20px 30px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 20px;
-            margin-bottom: 30px;
+            justify-content: center;
+            z-index: 999;
+            transition: opacity 0.8s;
+        }
+        #loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid #2a2a3a;
+            border-top: 5px solid #6c5ce7;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        #loading-screen p {
+            margin-top: 1.2rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+            color: #aaa;
+        }
+
+        /* ---------- GLASS & SHARED ---------- */
+        .glass {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
-        .header h1 {
-            font-size: 1.8rem;
-            font-weight: 600;
+        body.light .glass {
+            background: rgba(255, 255, 255, 0.5);
+            border-color: rgba(0, 0, 0, 0.08);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
         }
-        .header h1 i {
+        .hidden {
+            display: none !important;
+        }
+
+        /* ---------- HEADER ---------- */
+        .glass-header {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.7rem 1rem;
+            padding: 0.6rem 1.2rem;
+            margin-bottom: 1.2rem;
+            border-radius: 40px;
+            background: rgba(20, 20, 30, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        body.light .glass-header {
+            background: rgba(255, 255, 255, 0.6);
+        }
+        .logo {
+            font-weight: 700;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .logo i {
             color: #6c5ce7;
         }
-        .header-actions {
+        .nav-menu {
             display: flex;
-            gap: 12px;
-        }
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 12px;
-            font-family: 'Poppins', sans-serif;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+            gap: 1rem;
+            font-weight: 400;
             font-size: 0.9rem;
         }
-        .btn-primary {
-            background: #6c5ce7;
-            color: white;
+        .nav-menu a {
+            text-decoration: none;
+            color: inherit;
+            opacity: 0.7;
+            transition: 0.2s;
+            cursor: pointer;
+            padding: 4px 12px;
+            border-radius: 20px;
         }
-        .btn-primary:hover {
-            background: #5a4bd1;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(108, 92, 231, 0.3);
+        .nav-menu a:hover {
+            opacity: 1;
+            background: rgba(255,255,255,0.05);
         }
-        .btn-success {
-            background: #00b894;
-            color: white;
-        }
-        .btn-success:hover {
-            background: #00a381;
-            transform: translateY(-2px);
-        }
-        .btn-danger {
-            background: #e17055;
-            color: white;
-        }
-        .btn-danger:hover {
-            background: #d63031;
-            transform: translateY(-2px);
-        }
-        .btn-warning {
-            background: #fdcb6e;
-            color: #2d3436;
-        }
-        .btn-warning:hover {
-            background: #fdcb6e;
-            transform: translateY(-2px);
-        }
-        .btn-outline {
-            background: transparent;
-            color: #eee;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        .btn-outline:hover {
-            background: rgba(255, 255, 255, 0.05);
-        }
-        .btn-sm {
-            padding: 6px 14px;
-            font-size: 0.8rem;
-        }
-
-        /* Stats */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        .stat-card {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 20px;
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-        }
-        .stat-card .stat-value {
-            font-size: 2rem;
-            font-weight: 600;
+        .nav-menu a.active {
+            opacity: 1;
             color: #6c5ce7;
+            background: rgba(108,92,231,0.15);
         }
-        .stat-card .stat-label {
+        .search-wrapper {
+            flex: 1;
+            min-width: 120px;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .search-wrapper input {
+            width: 100%;
+            padding: 0.4rem 0.8rem 0.4rem 2.2rem;
+            border-radius: 40px;
+            border: none;
+            background: rgba(255, 255, 255, 0.08);
+            color: #eee;
+            font-family: 'Poppins', sans-serif;
             font-size: 0.85rem;
-            opacity: 0.6;
-            margin-top: 4px;
+            outline: none;
+            transition: 0.2s;
+        }
+        body.light .search-wrapper input {
+            background: rgba(0, 0, 0, 0.06);
+            color: #111;
+        }
+        .search-wrapper i {
+            position: absolute;
+            left: 12px;
+            opacity: 0.5;
+            font-size: 0.9rem;
+        }
+        .user-profile {
+            font-size: 1.6rem;
+            opacity: 0.8;
+            cursor: pointer;
         }
 
-        /* File Grid */
-        .file-grid {
+        /* ---------- MAIN GRID ---------- */
+        .main-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
+            grid-template-columns: 1fr 320px;
+            gap: 1.2rem;
+            margin-bottom: 1.2rem;
         }
-        .file-card {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 16px;
-            padding: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            transition: all 0.3s;
+        @media (max-width: 860px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+        }
+
+        /* ---------- VIDEO PLAYER ---------- */
+        .player-wrapper {
             position: relative;
-        }
-        .file-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            border-color: rgba(108, 92, 231, 0.3);
-        }
-        .file-card .file-thumbnail {
+            border-radius: 28px;
+            overflow: hidden;
+            background: #0a0a14;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
             width: 100%;
-            height: 180px;
-            border-radius: 12px;
-            background: #1a1a2e;
+            min-height: 300px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 15px;
-            overflow: hidden;
-            position: relative;
         }
-        .file-card .file-thumbnail video,
-        .file-card .file-thumbnail img {
+        .player-wrapper video {
             width: 100%;
-            height: 100%;
-            object-fit: cover;
+            display: block;
+            aspect-ratio: 16 / 9;
+            background: #0a0a14;
+            object-fit: contain;
+            max-height: 80vh;
         }
-        .file-card .file-thumbnail .file-icon {
+        .player-wrapper .video-placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 1.2rem;
+            gap: 1rem;
+            background: #0a0a14;
+        }
+        .player-wrapper .video-placeholder i {
             font-size: 4rem;
             color: #6c5ce7;
             opacity: 0.5;
         }
-        .file-card .file-thumbnail .play-overlay {
+        /* custom controls */
+        .custom-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 8px 12px 10px;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            transition: opacity 0.3s;
+            z-index: 10;
+        }
+        .custom-controls.hidden-controls {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .progress-bar-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .progress-slider {
+            flex: 1;
+            height: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            outline: none;
+            transition: 0.2s;
+        }
+        .progress-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #6c5ce7;
+            cursor: pointer;
+            box-shadow: 0 0 8px #6c5ce7aa;
+        }
+        .progress-time {
+            display: flex;
+            gap: 8px;
+            font-size: 0.7rem;
+            opacity: 0.8;
+            white-space: nowrap;
+        }
+        .controls-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px 10px;
+        }
+        .ctrl-btn {
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 30px;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            opacity: 0.8;
+        }
+        .ctrl-btn:hover {
+            opacity: 1;
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .volume-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .volume-group input[type="range"] {
+            width: 60px;
+            height: 3px;
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+        .volume-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #6c5ce7;
+        }
+        .speed-group select {
+            background: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            border: none;
+            padding: 2px 8px;
+            border-radius: 30px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.7rem;
+            cursor: pointer;
+        }
+        /* drop overlay */
+        .drop-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(108, 92, 231, 0.15);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            font-weight: 500;
+            color: #fff;
+            pointer-events: none;
+            opacity: 0;
+            transition: 0.3s;
+            border: 3px dashed #6c5ce7;
+            margin: 16px;
+            border-radius: 30px;
+            z-index: 20;
+        }
+        .player-wrapper.drag-over .drop-overlay {
+            opacity: 1;
+        }
+        /* error message */
+        .video-error {
             position: absolute;
             inset: 0;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: rgba(0, 0, 0, 0.3);
-            opacity: 0;
-            transition: 0.3s;
-        }
-        .file-card .file-thumbnail:hover .play-overlay {
-            opacity: 1;
-        }
-        .file-card .file-thumbnail .play-overlay i {
-            font-size: 3rem;
-            color: white;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-        }
-        .file-card .file-info {
-            margin-bottom: 12px;
-        }
-        .file-card .file-name {
-            font-weight: 500;
-            font-size: 1rem;
-            margin-bottom: 4px;
-            word-break: break-all;
-        }
-        .file-card .file-meta {
-            font-size: 0.8rem;
-            opacity: 0.6;
-        }
-        .file-card .file-id {
-            font-size: 0.7rem;
-            opacity: 0.4;
-            font-family: monospace;
-            margin-top: 4px;
-            word-break: break-all;
-        }
-        .file-card .file-actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid rgba(255, 255, 255, 0.06);
-        }
-
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #666;
-        }
-        .empty-state i {
-            font-size: 4rem;
-            color: #6c5ce7;
-            opacity: 0.3;
-            margin-bottom: 20px;
-        }
-        .empty-state h3 {
-            font-size: 1.5rem;
-            margin-bottom: 10px;
-        }
-        .empty-state p {
-            opacity: 0.6;
-        }
-
-        /* Modal */
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
             background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(8px);
+            color: #ff6b6b;
+            z-index: 5;
+            padding: 2rem;
+            text-align: center;
+        }
+        .video-error i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        .video-error .retry-btn {
+            margin-top: 1rem;
+            padding: 0.5rem 2rem;
+            background: #6c5ce7;
+            border: none;
+            border-radius: 30px;
+            color: #fff;
+            cursor: pointer;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.9rem;
+        }
+        .video-error .retry-btn:hover {
+            background: #7c6cf7;
+        }
+
+        /* ---------- VIDEO INFO ---------- */
+        .video-info {
+            padding: 1rem 1.4rem;
+            margin-top: 1rem;
+        }
+        .video-info h2 {
+            font-weight: 600;
+            font-size: 1.3rem;
+            word-break: break-word;
+        }
+        .meta-row {
+            opacity: 0.6;
+            font-size: 0.8rem;
+            margin: 4px 0 8px;
+        }
+        .action-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px 16px;
+            margin-top: 10px;
+            align-items: center;
+        }
+        .action-bar button,
+        .upload-label {
+            background: rgba(255, 255, 255, 0.06);
+            border: none;
+            padding: 5px 14px;
+            border-radius: 40px;
+            color: inherit;
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer;
             display: flex;
             align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            padding: 20px;
+            gap: 6px;
+            transition: 0.2s;
+            font-size: 0.85rem;
         }
-        .modal-overlay.hidden {
+        .action-bar button:hover,
+        .upload-label:hover {
+            background: rgba(108, 92, 231, 0.2);
+        }
+        .upload-label input {
             display: none;
         }
-        .modal-content {
-            background: #1a1a2e;
-            border-radius: 20px;
-            padding: 30px;
-            max-width: 500px;
-            width: 100%;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            animation: modalSlideIn 0.3s ease;
+
+        /* ---------- COMMENTS ---------- */
+        .comments-section {
+            padding: 1rem 1.4rem;
+            margin-top: 1rem;
         }
-        @keyframes modalSlideIn {
-            from {
-                transform: translateY(-30px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
+        .add-comment {
+            display: flex;
+            gap: 8px;
+            margin: 10px 0 14px;
         }
-        .modal-content h2 {
-            margin-bottom: 10px;
-            color: #6c5ce7;
-        }
-        .modal-content p {
-            opacity: 0.7;
-            margin-bottom: 20px;
-            font-size: 0.95rem;
-        }
-        .modal-content .modal-body {
-            margin: 20px 0;
-        }
-        .modal-content input[type="text"] {
-            width: 100%;
-            padding: 12px 16px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(255, 255, 255, 0.05);
+        .add-comment input {
+            flex: 1;
+            padding: 8px 14px;
+            border-radius: 40px;
+            border: none;
+            background: rgba(255, 255, 255, 0.06);
             color: #eee;
             font-family: 'Poppins', sans-serif;
-            font-size: 1rem;
             outline: none;
-            transition: 0.3s;
+            font-size: 0.9rem;
         }
-        .modal-content input[type="text"]:focus {
-            border-color: #6c5ce7;
-            box-shadow: 0 0 20px rgba(108, 92, 231, 0.1);
+        body.light .add-comment input {
+            background: rgba(0, 0, 0, 0.06);
+            color: #111;
         }
-        .modal-content .modal-actions {
+        .add-comment button {
+            background: #6c5ce7;
+            border: none;
+            padding: 0 16px;
+            border-radius: 40px;
+            color: #fff;
+            cursor: pointer;
+        }
+        .comments-list {
             display: flex;
-            gap: 12px;
-            margin-top: 20px;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 200px;
+            overflow-y: auto;
         }
-        .modal-content .modal-actions .btn {
-            flex: 1;
-            justify-content: center;
-            padding: 12px;
+        .comment-item {
+            background: rgba(255, 255, 255, 0.04);
+            padding: 8px 14px;
+            border-radius: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            word-break: break-word;
+        }
+        .comment-item button {
+            background: transparent;
+            border: none;
+            color: #ff6b6b;
+            cursor: pointer;
+            flex-shrink: 0;
+            margin-left: 8px;
         }
 
-        /* Toast */
+        /* ---------- PLAYLIST SIDEBAR ---------- */
+        .playlist-sidebar {
+            padding: 1rem 0.8rem;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .playlist-sidebar h3 {
+            margin-bottom: 0.8rem;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            font-size: 1.1rem;
+        }
+        .playlist-item {
+            display: flex;
+            gap: 10px;
+            padding: 6px 8px;
+            border-radius: 18px;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-bottom: 6px;
+            align-items: center;
+        }
+        .playlist-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .playlist-item.active {
+            background: rgba(108, 92, 231, 0.25);
+            border-left: 4px solid #6c5ce7;
+        }
+        .playlist-item img {
+            width: 64px;
+            height: 44px;
+            object-fit: cover;
+            border-radius: 12px;
+            background: #222;
+            flex-shrink: 0;
+        }
+        .playlist-item .pl-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .playlist-item .pl-info .pl-title {
+            font-weight: 500;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .playlist-item .pl-info .pl-duration {
+            font-size: 0.7rem;
+            opacity: 0.5;
+        }
+
+        /* ---------- FOOTER ---------- */
+        .glass-footer {
+            padding: 0.8rem 1.4rem;
+            border-radius: 40px;
+            margin-top: 1.2rem;
+            background: rgba(20, 20, 30, 0.5);
+            backdrop-filter: blur(6px);
+        }
+        .footer-content {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.8rem;
+        }
+        .social-icons a,
+        .contact-links a {
+            color: inherit;
+            margin: 0 4px;
+            opacity: 0.6;
+            transition: 0.2s;
+            text-decoration: none;
+        }
+        .social-icons a:hover {
+            opacity: 1;
+        }
+        .contact-links a:hover {
+            opacity: 1;
+        }
+
+        /* ---------- TOAST ---------- */
         .toast-container {
             position: fixed;
             bottom: 20px;
@@ -322,25 +583,20 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
-            z-index: 9999;
+            z-index: 999;
             max-width: 90%;
         }
         .toast {
             background: #1a1a2e;
             color: #eee;
-            padding: 12px 24px;
-            border-radius: 12px;
+            padding: 10px 20px;
+            border-radius: 40px;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(6px);
             border-left: 4px solid #6c5ce7;
             animation: slideIn 0.4s ease;
             font-weight: 400;
             font-size: 0.9rem;
-        }
-        .toast.success {
-            border-left-color: #00b894;
-        }
-        .toast.error {
-            border-left-color: #e17055;
         }
         @keyframes slideIn {
             from {
@@ -353,583 +609,869 @@
             }
         }
 
-        /* Responsive */
-        @media (max-width: 768px) {
+        /* scroll */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #6c5ce7;
+            border-radius: 10px;
+        }
+
+        /* ---------- MOBILE FIRST ---------- */
+        @media (max-width: 640px) {
             body {
-                padding: 10px;
+                padding: 0.4rem;
             }
-            .header {
+            .glass-header {
                 flex-direction: column;
-                gap: 15px;
-                padding: 15px 20px;
+                align-items: stretch;
+                gap: 0.5rem;
+                padding: 0.6rem 1rem;
+                border-radius: 28px;
             }
-            .header h1 {
-                font-size: 1.4rem;
+            .nav-menu {
+                justify-content: center;
+                font-size: 0.8rem;
+                gap: 0.8rem;
             }
-            .file-grid {
-                grid-template-columns: 1fr;
+            .search-wrapper {
+                min-width: 100px;
             }
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
+            .controls-row {
+                gap: 4px 6px;
             }
-            .modal-content {
-                padding: 20px;
-                margin: 10px;
+            .volume-group input[type="range"] {
+                width: 44px;
+            }
+            .ctrl-btn {
+                font-size: 0.85rem;
+                padding: 2px 4px;
+            }
+            .ctrl-btn i {
+                font-size: 0.9rem;
+            }
+            .speed-group select {
+                font-size: 0.65rem;
+                padding: 1px 6px;
+            }
+            .video-info h2 {
+                font-size: 1.1rem;
+            }
+            .action-bar button,
+            .upload-label {
+                font-size: 0.75rem;
+                padding: 4px 10px;
+            }
+            .playlist-item img {
+                width: 52px;
+                height: 36px;
+            }
+            .playlist-item .pl-info .pl-title {
+                font-size: 0.8rem;
+            }
+            .comments-section {
+                padding: 0.8rem 1rem;
+            }
+            .add-comment input {
+                font-size: 0.8rem;
+                padding: 6px 12px;
+            }
+            .glass-footer {
+                padding: 0.6rem 1rem;
+            }
+            .footer-content {
+                font-size: 0.7rem;
+                justify-content: center;
+                gap: 0.4rem;
             }
         }
-        @media (max-width: 480px) {
-            .header-actions {
-                flex-wrap: wrap;
-                justify-content: center;
+        @media (max-width: 400px) {
+            .controls-row .ctrl-btn {
+                font-size: 0.75rem;
             }
-            .btn {
-                font-size: 0.8rem;
-                padding: 8px 14px;
-            }
-            .stats-grid {
-                grid-template-columns: 1fr;
+            .volume-group input[type="range"] {
+                width: 32px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <h1><i class="fas fa-video"></i> Jay Video Hub</h1>
-            <div class="header-actions">
-                <button class="btn btn-success" onclick="refreshFiles()">
-                    <i class="fas fa-sync-alt"></i> Refresh
-                </button>
-                <button class="btn btn-primary" onclick="showUploadModal()">
-                    <i class="fas fa-upload"></i> Upload Video
-                </button>
-            </div>
-        </div>
-
-        <!-- Stats -->
-        <div class="stats-grid" id="statsGrid">
-            <div class="stat-card">
-                <div class="stat-value" id="totalFiles">0</div>
-                <div class="stat-label">Total Videos</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="totalSize">0 MB</div>
-                <div class="stat-label">Total Storage Used</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="videoCount">0</div>
-                <div class="stat-label">Video Files</div>
-            </div>
-        </div>
-
-        <!-- File Grid -->
-        <div id="fileGrid" class="file-grid"></div>
+    <!-- loading -->
+    <div id="loading-screen">
+        <div class="spinner"></div>
+        <p>loading …</p>
     </div>
 
-    <!-- Upload Modal -->
-    <div id="uploadModal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <h2><i class="fas fa-upload"></i> Upload Video</h2>
-            <p>Select a video file to upload to your library</p>
-            <div class="modal-body">
-                <input type="text" id="uploadTitle" placeholder="Video title (optional)" />
-                <br><br>
-                <input type="file" id="uploadFile" accept="video/*" style="width:100%;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#eee;" />
-                <div id="uploadProgress" style="display:none;margin-top:15px;">
-                    <div style="height:4px;background:rgba(255,255,255,0.1);border-radius:4px;overflow:hidden;">
-                        <div id="uploadProgressBar" style="height:100%;background:#6c5ce7;width:0%;transition:width 0.3s;"></div>
+    <div id="app" class="hidden">
+        <!-- header -->
+        <header class="glass-header">
+            <div class="logo"><i class="fas fa-play-circle"></i>Jay Player</div>
+            <nav class="nav-menu">
+                <a href="/" class="active">Home</a>
+                <a href="/rename.html">Manage Files</a>
+            </nav>
+            <div class="search-wrapper"><i class="fas fa-search"></i><input type="text" id="searchInput" placeholder="Search videos..." /></div>
+            <div class="user-profile"><i class="fas fa-user-circle"></i></div>
+        </header>
+
+        <div class="main-grid">
+            <!-- video section -->
+            <section class="video-section">
+                <div class="player-wrapper" id="playerWrapper">
+                    <video id="videoPlayer" preload="metadata" crossorigin="anonymous"></video>
+                    <div class="video-placeholder" id="videoPlaceholder">
+                        <i class="fas fa-play-circle"></i>
+                        <span>Select a video to play</span>
                     </div>
-                    <span id="uploadProgressText" style="font-size:0.8rem;opacity:0.7;display:block;margin-top:5px;">0%</span>
+                    <div class="video-error hidden" id="videoError">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span id="errorMessage">Failed to load video</span>
+                        <button class="retry-btn" id="retryBtn">Retry</button>
+                    </div>
+                    <div class="custom-controls" id="customControls">
+                        <div class="progress-bar-container">
+                            <input type="range" class="progress-slider" id="progressSlider" value="0" min="0" max="100" step="0.1" />
+                            <div class="progress-time"><span id="currentTime">0:00</span><span id="totalDuration">0:00</span></div>
+                        </div>
+                        <div class="controls-row">
+                            <button id="playPauseBtn" class="ctrl-btn"><i class="fas fa-play"></i></button>
+                            <button id="skipBackBtn" class="ctrl-btn"><i class="fas fa-backward"></i> 10</button>
+                            <button id="skipForwardBtn" class="ctrl-btn"><i class="fas fa-forward"></i> 10</button>
+                            <div class="volume-group">
+                                <button id="muteBtn" class="ctrl-btn"><i class="fas fa-volume-up"></i></button>
+                                <input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="0.8" />
+                            </div>
+                            <div class="speed-group">
+                                <select id="playbackSpeed"><option value="0.5">0.5x</option><option value="1" selected>1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="2">2x</option></select>
+                            </div>
+                            <button id="theaterBtn" class="ctrl-btn"><i class="fas fa-expand-alt"></i></button>
+                            <button id="pipBtn" class="ctrl-btn"><i class="fas fa-window-restore"></i></button>
+                            <button id="fullscreenBtn" class="ctrl-btn"><i class="fas fa-expand"></i></button>
+                        </div>
+                    </div>
+                    <div id="dropOverlay" class="drop-overlay">📁 drop video file</div>
+                </div>
+
+                <div class="video-info glass">
+                    <h2 id="videoTitle">Select a video</h2>
+                    <div class="meta-row"><span id="viewCount">0 views</span> · <span id="uploadDate">today</span></div>
+                    <p id="videoDesc">Click a video from the playlist to start watching</p>
+                    <div class="action-bar">
+                        <button id="likeBtn"><i class="far fa-thumbs-up"></i> <span id="likeCount">0</span></button>
+                        <button id="dislikeBtn"><i class="far fa-thumbs-down"></i> <span id="dislikeCount">0</span></button>
+                        <button id="shareBtn"><i class="fas fa-share-alt"></i> Share</button>
+                        <button id="saveBtn"><i class="far fa-bookmark"></i> Save</button>
+                        <label class="upload-label"><i class="fas fa-upload"></i> Upload<input type="file" id="fileUpload" accept="video/*" /></label>
+                    </div>
+                </div>
+
+                <div class="comments-section glass">
+                    <h3>Comments <span id="commentCount">0</span></h3>
+                    <div class="add-comment"><input type="text" id="commentInput" placeholder="Write a comment..." /><button id="addCommentBtn"><i class="fas fa-paper-plane"></i></button></div>
+                    <div id="commentsList" class="comments-list"></div>
+                </div>
+            </section>
+
+            <!-- playlist -->
+            <aside class="playlist-sidebar glass">
+                <h3><i class="fas fa-list-ul"></i> Playlist</h3>
+                <div id="playlistContainer" class="playlist-container"></div>
+            </aside>
+        </div>
+
+        <footer class="glass-footer">
+            <div class="footer-content">
+                <span>© <span id="copyrightYear">2026</span> JayBohol</span>
+                <div class="social-icons">
+                    <a href="#"><i class="fab fa-github"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-youtube"></i></a>
+                </div>
+                <div class="contact-links">
+                    <a href="mailto:jaybohol@example.com">contact</a> · 
+                    <a href="#">privacy</a>
                 </div>
             </div>
-            <div class="modal-actions">
-                <button class="btn btn-outline" onclick="hideUploadModal()">Cancel</button>
-                <button class="btn btn-primary" id="uploadBtn">Upload</button>
-            </div>
-        </div>
+        </footer>
     </div>
 
-    <!-- Rename Modal -->
-    <div id="renameModal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <h2><i class="fas fa-edit"></i> Rename Video</h2>
-            <p>Enter a new name for this video</p>
-            <div class="modal-body">
-                <input type="text" id="renameInput" placeholder="New filename" />
-                <input type="hidden" id="renameFileId" />
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-outline" onclick="hideRenameModal()">Cancel</button>
-                <button class="btn btn-warning" id="renameBtn">Rename</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Delete Confirmation Modal -->
-    <div id="deleteModal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <h2><i class="fas fa-exclamation-triangle" style="color:#e17055;"></i> Delete Video</h2>
-            <p>Are you sure you want to delete this video? This action cannot be undone.</p>
-            <div class="modal-body">
-                <p style="font-size:0.9rem;opacity:0.6;" id="deleteFileName"></p>
-                <input type="hidden" id="deleteFileId" />
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-outline" onclick="hideDeleteModal()">Cancel</button>
-                <button class="btn btn-danger" id="deleteBtn">Delete Permanently</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Toast Container -->
     <div id="toastContainer" class="toast-container"></div>
 
     <script>
-        // ============================================
-        // CONFIGURATION
-        // ============================================
-        const API_BASE = 'https://jay-so2u.onrender.com';
-        const API_FILES = `${API_BASE}/files`;
-        const API_UPLOAD = `${API_BASE}/upload`;
-        const API_STREAM = `${API_BASE}/stream`;
+        (function() {
+            "use strict";
 
-        // ============================================
-        // STATE
-        // ============================================
-        let files = [];
+            // ----- DOM refs -----
+            const app = document.getElementById('app');
+            const loading = document.getElementById('loading-screen');
+            const video = document.getElementById('videoPlayer');
+            const videoPlaceholder = document.getElementById('videoPlaceholder');
+            const videoError = document.getElementById('videoError');
+            const errorMessage = document.getElementById('errorMessage');
+            const retryBtn = document.getElementById('retryBtn');
+            const playBtn = document.getElementById('playPauseBtn');
+            const skipBack = document.getElementById('skipBackBtn');
+            const skipForward = document.getElementById('skipForwardBtn');
+            const progressSlider = document.getElementById('progressSlider');
+            const currentTimeSpan = document.getElementById('currentTime');
+            const durationSpan = document.getElementById('totalDuration');
+            const volumeSlider = document.getElementById('volumeSlider');
+            const muteBtn = document.getElementById('muteBtn');
+            const speedSelect = document.getElementById('playbackSpeed');
+            const theaterBtn = document.getElementById('theaterBtn');
+            const pipBtn = document.getElementById('pipBtn');
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
+            const videoTitle = document.getElementById('videoTitle');
+            const viewCount = document.getElementById('viewCount');
+            const uploadDate = document.getElementById('uploadDate');
+            const videoDesc = document.getElementById('videoDesc');
+            const likeBtn = document.getElementById('likeBtn');
+            const likeCount = document.getElementById('likeCount');
+            const dislikeBtn = document.getElementById('dislikeBtn');
+            const dislikeCount = document.getElementById('dislikeCount');
+            const shareBtn = document.getElementById('shareBtn');
+            const saveBtn = document.getElementById('saveBtn');
+            const fileUpload = document.getElementById('fileUpload');
+            const searchInput = document.getElementById('searchInput');
+            const playlistContainer = document.getElementById('playlistContainer');
+            const commentInput = document.getElementById('commentInput');
+            const addCommentBtn = document.getElementById('addCommentBtn');
+            const commentsList = document.getElementById('commentsList');
+            const commentCountSpan = document.getElementById('commentCount');
+            const toastContainer = document.getElementById('toastContainer');
+            const playerWrapper = document.getElementById('playerWrapper');
+            const copyrightYear = document.getElementById('copyrightYear');
 
-        // ============================================
-        // TOAST NOTIFICATIONS
-        // ============================================
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.textContent = message;
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateX(40px)';
-                setTimeout(() => toast.remove(), 400);
-            }, 3000);
-        }
+            // ----- Dynamic Copyright Year -----
+            copyrightYear.textContent = new Date().getFullYear();
 
-        // ============================================
-        // FORMAT HELPERS
-        // ============================================
-        function formatFileSize(bytes) {
-            if (!bytes) return '0 B';
-            const k = 1024;
-            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
+            // ----- state -----
+            let currentVideoIndex = 0;
+            let isTheater = false;
 
-        function formatDate(dateString) {
-            if (!dateString) return 'Unknown';
-            const date = new Date(dateString);
-            return date.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        }
+            // ----- API Base URL -----
+            const API_BASE = 'https://jay-so2u.onrender.com/stream/';
+            const API_BASE_FILE = 'https://jay-so2u.onrender.com/file/';
+            const API_BASE_UPLOAD = 'https://jay-so2u.onrender.com/upload';
+            const API_FILES_LIST = 'https://jay-so2u.onrender.com/files';
 
-        function getFileExtension(filename) {
-            return filename.split('.').pop().toLowerCase();
-        }
+            // ----- PLAYLIST -----
+            let playlist = [];
 
-        function isVideoFile(filename) {
-            const videoExtensions = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'mpeg', '3gp', 'flv'];
-            const ext = getFileExtension(filename);
-            return videoExtensions.includes(ext);
-        }
-
-        // ============================================
-        // LOAD FILES FROM SERVER
-        // ============================================
-        async function loadFiles() {
-            try {
-                const response = await fetch(API_FILES);
-                if (!response.ok) {
-                    throw new Error(`Failed to load files: ${response.status}`);
-                }
-                const data = await response.json();
-                
-                if (data.success && data.files) {
-                    files = data.files;
-                    renderFiles();
-                    updateStats();
-                    return true;
-                } else {
-                    throw new Error(data.message || 'Failed to load files');
-                }
-            } catch (error) {
-                console.error('Error loading files:', error);
-                showToast('Error loading files: ' + error.message, 'error');
-                return false;
-            }
-        }
-
-        function refreshFiles() {
-            showToast('Refreshing...', 'info');
-            loadFiles();
-        }
-
-        // ============================================
-        // RENDER FILES
-        // ============================================
-        function renderFiles() {
-            const grid = document.getElementById('fileGrid');
-            
-            if (files.length === 0) {
-                grid.innerHTML = `
-                    <div class="empty-state" style="grid-column:1/-1;">
-                        <i class="fas fa-video"></i>
-                        <h3>No videos uploaded yet</h3>
-                        <p>Click the "Upload Video" button to add your first video</p>
-                    </div>
-                `;
-                return;
-            }
-
-            grid.innerHTML = files.map(file => {
-                const isVideo = isVideoFile(file.filename);
-                const fileId = file.id || file._id;
-                
-                return `
-                    <div class="file-card" data-id="${fileId}">
-                        <div class="file-thumbnail">
-                            ${isVideo ? `
-                                <video muted preload="metadata">
-                                    <source src="${API_STREAM}/${fileId}.mp4" type="video/mp4">
-                                </video>
-                                <div class="play-overlay">
-                                    <i class="fas fa-play-circle"></i>
-                                </div>
-                            ` : `
-                                <div class="file-icon">
-                                    <i class="fas fa-file"></i>
-                                </div>
-                            `}
-                        </div>
-                        <div class="file-info">
-                            <div class="file-name">${file.filename || 'Untitled'}</div>
-                            <div class="file-meta">
-                                ${formatFileSize(file.fileSize || file.length || 0)} · ${formatDate(file.uploadDate || file.uploadDate)}
-                            </div>
-                            <div class="file-id">ID: ${fileId}</div>
-                        </div>
-                        <div class="file-actions">
-                            <button class="btn btn-success btn-sm" onclick="playVideo('${fileId}')">
-                                <i class="fas fa-play"></i> Play
-                            </button>
-                            <button class="btn btn-warning btn-sm" onclick="showRenameModal('${fileId}')">
-                                <i class="fas fa-edit"></i> Rename
-                            </button>
-                            <button class="btn btn-danger btn-sm" onclick="showDeleteModal('${fileId}')">
-                                <i class="fas fa-trash"></i> Delete
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // ============================================
-        // UPDATE STATS
-        // ============================================
-        function updateStats() {
-            document.getElementById('totalFiles').textContent = files.length;
-            
-            const totalSize = files.reduce((sum, file) => sum + (file.fileSize || file.length || 0), 0);
-            document.getElementById('totalSize').textContent = formatFileSize(totalSize);
-            
-            const videoCount = files.filter(file => isVideoFile(file.filename)).length;
-            document.getElementById('videoCount').textContent = videoCount;
-        }
-
-        // ============================================
-        // PLAY VIDEO
-        // ============================================
-        function playVideo(fileId) {
-            const url = `${API_STREAM}/${fileId}.mp4`;
-            window.open(url, '_blank');
-            showToast('Opening video...', 'info');
-        }
-
-        // ============================================
-        // UPLOAD VIDEO
-        // ============================================
-        function showUploadModal() {
-            document.getElementById('uploadModal').classList.remove('hidden');
-            document.getElementById('uploadFile').value = '';
-            document.getElementById('uploadTitle').value = '';
-            document.getElementById('uploadProgress').style.display = 'none';
-            document.getElementById('uploadProgressBar').style.width = '0%';
-            document.getElementById('uploadProgressText').textContent = '0%';
-        }
-
-        function hideUploadModal() {
-            document.getElementById('uploadModal').classList.add('hidden');
-        }
-
-        document.getElementById('uploadBtn').addEventListener('click', async function() {
-            const fileInput = document.getElementById('uploadFile');
-            const titleInput = document.getElementById('uploadTitle');
-            const file = fileInput.files[0];
-            
-            if (!file) {
-                showToast('Please select a video file', 'error');
-                return;
-            }
-
-            if (!file.type.startsWith('video/')) {
-                showToast('Please select a video file', 'error');
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('file', file);
-            if (titleInput.value.trim()) {
-                formData.append('title', titleInput.value.trim());
-            }
-
-            const progressContainer = document.getElementById('uploadProgress');
-            const progressBar = document.getElementById('uploadProgressBar');
-            const progressText = document.getElementById('uploadProgressText');
-            progressContainer.style.display = 'block';
-
-            this.disabled = true;
-            this.textContent = 'Uploading...';
-
-            try {
-                const xhr = new XMLHttpRequest();
-                
-                xhr.upload.addEventListener('progress', (e) => {
-                    if (e.lengthComputable) {
-                        const percent = Math.round((e.loaded / e.total) * 100);
-                        progressBar.style.width = percent + '%';
-                        progressText.textContent = percent + '%';
+            // ----- Load files from server -----
+            async function loadFilesFromServer() {
+                try {
+                    const response = await fetch(API_FILES_LIST);
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch files');
                     }
-                });
-
-                const uploadPromise = new Promise((resolve, reject) => {
-                    xhr.onload = () => {
-                        if (xhr.status === 200) {
-                            try {
-                                resolve(JSON.parse(xhr.responseText));
-                            } catch {
-                                reject(new Error('Invalid response'));
-                            }
-                        } else {
-                            reject(new Error(`Upload failed: ${xhr.status}`));
+                    const data = await response.json();
+                    
+                    if (data.success && data.files && data.files.length > 0) {
+                        playlist = data.files.map(file => ({
+                            id: file.id,
+                            title: getVideoTitle(file.filename),
+                            filename: file.filename,
+                            src: API_BASE + file.id + '.mp4',
+                            fileUrl: API_BASE_FILE + file.id + '.mp4',
+                            poster: '',
+                            duration: '0:00',
+                            views: 0,
+                            date: file.uploadDate ? new Date(file.uploadDate).toISOString().slice(0, 10) : 'today',
+                            desc: getVideoDescription(file.filename),
+                            fileSize: file.fileSize || 0
+                        }));
+                        
+                        if (playlist.length > 0) {
+                            loadVideo(0);
                         }
-                    };
-                    xhr.onerror = () => reject(new Error('Network error'));
-                    xhr.open('POST', API_UPLOAD);
-                    xhr.send(formData);
-                });
-
-                const data = await uploadPromise;
-                
-                if (data.success) {
-                    showToast('Upload successful!', 'success');
-                    hideUploadModal();
-                    await loadFiles();
-                } else {
-                    showToast('Upload failed: ' + (data.message || 'Unknown error'), 'error');
+                    }
+                    renderPlaylist(searchInput.value);
+                    showToast(`Loaded ${playlist.length} videos`);
+                } catch (error) {
+                    console.error('Error loading files:', error);
+                    showToast('Could not load files from server');
                 }
-            } catch (error) {
-                console.error('Upload error:', error);
-                showToast('Upload error: ' + error.message, 'error');
-            } finally {
-                this.disabled = false;
-                this.textContent = 'Upload';
-                progressContainer.style.display = 'none';
-            }
-        });
-
-        // Close modal with Escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                hideUploadModal();
-                hideRenameModal();
-                hideDeleteModal();
-            }
-        });
-
-        // ============================================
-        // RENAME VIDEO
-        // ============================================
-        let renameFileId = null;
-
-        function showRenameModal(fileId) {
-            const file = files.find(f => (f.id || f._id) === fileId);
-            if (!file) {
-                showToast('File not found', 'error');
-                return;
-            }
-            
-            renameFileId = fileId;
-            document.getElementById('renameInput').value = file.filename || '';
-            document.getElementById('renameFileId').value = fileId;
-            document.getElementById('renameModal').classList.remove('hidden');
-            document.getElementById('renameInput').focus();
-            document.getElementById('renameInput').select();
-        }
-
-        function hideRenameModal() {
-            document.getElementById('renameModal').classList.add('hidden');
-            renameFileId = null;
-        }
-
-        document.getElementById('renameBtn').addEventListener('click', async function() {
-            const fileId = document.getElementById('renameFileId').value;
-            const newFilename = document.getElementById('renameInput').value.trim();
-            
-            if (!newFilename) {
-                showToast('Please enter a filename', 'error');
-                return;
             }
 
-            this.disabled = true;
-            this.textContent = 'Renaming...';
+            // ----- Generate video titles from filename -----
+            function getVideoTitle(filename) {
+                let name = filename.replace(/\.[^/.]+$/, '');
+                name = name.replace(/[_-]/g, ' ');
+                name = name.split(' ').map(word => 
+                    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                ).join(' ');
+                if (name.length < 3 || /^[0-9a-f]{32}$/i.test(name.replace(/\s/g, ''))) {
+                    return 'Video ' + (playlist.length + 1);
+                }
+                return name || 'Untitled Video';
+            }
+
+            function getVideoDescription(filename) {
+                const title = getVideoTitle(filename);
+                return `${title} - A video shared on Jay Video Hub`;
+            }
+
+            // ----- shared backend (simulated with localStorage + broadcast) -----
+            function getSocialData() {
+                try {
+                    return JSON.parse(localStorage.getItem('social_data')) || { comments: [], likes: {}, dislikes: {},
+                        saves: [] };
+                } catch { return { comments: [], likes: {}, dislikes: {}, saves: [] }; }
+            }
+
+            function saveSocialData(data) {
+                localStorage.setItem('social_data', JSON.stringify(data));
+                try {
+                    const bc = new BroadcastChannel('social_channel');
+                    bc.postMessage({ type: 'sync', data });
+                    bc.close();
+                } catch {}
+            }
 
             try {
-                const response = await fetch(`${API_BASE}/file/${fileId}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ filename: newFilename })
+                const bc = new BroadcastChannel('social_channel');
+                bc.onmessage = (e) => {
+                    if (e.data && e.data.type === 'sync') {
+                        renderCommentsFromData(e.data.data.comments || []);
+                        updateLikeDislikeFromData(e.data.data);
+                    }
+                };
+            } catch {}
+
+            // ----- helpers -----
+            function formatTime(seconds) {
+                if (!seconds || isNaN(seconds) || !isFinite(seconds)) return '0:00';
+                const m = Math.floor(seconds / 60);
+                const s = Math.floor(seconds % 60);
+                return `${m}:${s.toString().padStart(2, '0')}`;
+            }
+
+            function showToast(msg) {
+                const t = document.createElement('div');
+                t.className = 'toast';
+                t.textContent = msg;
+                toastContainer.appendChild(t);
+                setTimeout(() => { t.remove(); }, 3000);
+            }
+
+            // ----- load video by index -----
+            function loadVideo(index) {
+                if (index < 0 || index >= playlist.length) {
+                    videoPlaceholder.classList.remove('hidden');
+                    video.classList.add('hidden');
+                    videoTitle.textContent = 'No videos available';
+                    videoDesc.textContent = 'Upload a video to get started';
+                    return;
+                }
+                currentVideoIndex = index;
+                const v = playlist[index];
+
+                videoError.classList.add('hidden');
+                videoPlaceholder.classList.add('hidden');
+                video.classList.remove('hidden');
+
+                video.src = v.src;
+                video.poster = v.poster || '';
+                video.load();
+
+                videoTitle.textContent = v.title;
+                viewCount.textContent = v.views + ' views';
+                uploadDate.textContent = v.date || 'today';
+                videoDesc.textContent = v.desc || 'no description';
+
+                document.querySelectorAll('.playlist-item').forEach((el, i) => {
+                    el.classList.toggle('active', i === index);
                 });
 
-                const data = await response.json();
-                
-                if (data.success) {
-                    showToast('File renamed successfully!', 'success');
-                    hideRenameModal();
-                    await loadFiles();
+                const data = getSocialData();
+                const likes = data.likes || {};
+                const dislikes = data.dislikes || {};
+                likeCount.textContent = likes[v.id] || 0;
+                dislikeCount.textContent = dislikes[v.id] || 0;
+
+                const saves = data.saves || [];
+                const isSaved = saves.includes(v.id);
+                saveBtn.querySelector('i').className = isSaved ? 'fas fa-bookmark' : 'far fa-bookmark';
+
+                if (v.duration && v.duration !== '0:00') {
+                    durationSpan.textContent = v.duration;
                 } else {
-                    showToast('Rename failed: ' + (data.message || 'Unknown error'), 'error');
+                    durationSpan.textContent = '0:00';
                 }
-            } catch (error) {
-                console.error('Rename error:', error);
-                showToast('Rename error: ' + error.message, 'error');
-            } finally {
-                this.disabled = false;
-                this.textContent = 'Rename';
             }
-        });
 
-        // Enter key for rename
-        document.getElementById('renameInput').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                document.getElementById('renameBtn').click();
-            }
-            if (e.key === 'Escape') {
-                hideRenameModal();
-            }
-        });
-
-        // ============================================
-        // DELETE VIDEO
-        // ============================================
-        let deleteFileId = null;
-
-        function showDeleteModal(fileId) {
-            const file = files.find(f => (f.id || f._id) === fileId);
-            if (!file) {
-                showToast('File not found', 'error');
-                return;
-            }
-            
-            deleteFileId = fileId;
-            document.getElementById('deleteFileName').textContent = `"${file.filename || 'Untitled'}"`;
-            document.getElementById('deleteFileId').value = fileId;
-            document.getElementById('deleteModal').classList.remove('hidden');
-        }
-
-        function hideDeleteModal() {
-            document.getElementById('deleteModal').classList.add('hidden');
-            deleteFileId = null;
-        }
-
-        document.getElementById('deleteBtn').addEventListener('click', async function() {
-            const fileId = document.getElementById('deleteFileId').value;
-
-            this.disabled = true;
-            this.textContent = 'Deleting...';
-
-            try {
-                const response = await fetch(`${API_BASE}/file/${fileId}`, {
-                    method: 'DELETE'
+            // ----- render playlist -----
+            function renderPlaylist(filter = '') {
+                const filtered = playlist.filter(v => v.title.toLowerCase().includes(filter.toLowerCase()));
+                playlistContainer.innerHTML = '';
+                if (filtered.length === 0) {
+                    playlistContainer.innerHTML = `
+                        <div style="text-align:center;padding:20px;color:#666;font-size:0.9rem;">
+                            <i class="fas fa-video" style="font-size:2rem;display:block;margin-bottom:10px;"></i>
+                            ${playlist.length === 0 ? 'No videos uploaded yet.<br>Click Upload to add videos!' : 'No matching videos'}
+                        </div>
+                    `;
+                    return;
+                }
+                filtered.forEach((v, idx) => {
+                    const originalIdx = playlist.indexOf(v);
+                    const div = document.createElement('div');
+                    div.className = 'playlist-item' + (originalIdx === currentVideoIndex ? ' active' : '');
+                    const color = stringToColor(v.title);
+                    div.innerHTML = `
+                        <div style="width:64px;height:44px;border-radius:12px;background:${color};display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;">
+                            <i class="fas fa-play" style="color:rgba(255,255,255,0.7);"></i>
+                        </div>
+                        <div class="pl-info"><div class="pl-title">${v.title}</div><div class="pl-duration">${v.duration || '0:00'} ${v.fileSize ? '· ' + formatFileSize(v.fileSize) : ''}</div></div>
+                    `;
+                    div.addEventListener('click', () => { loadVideo(originalIdx); });
+                    playlistContainer.appendChild(div);
                 });
-
-                const data = await response.json();
-                
-                if (data.success) {
-                    showToast('File deleted successfully!', 'success');
-                    hideDeleteModal();
-                    await loadFiles();
-                } else {
-                    showToast('Delete failed: ' + (data.message || 'Unknown error'), 'error');
-                }
-            } catch (error) {
-                console.error('Delete error:', error);
-                showToast('Delete error: ' + error.message, 'error');
-            } finally {
-                this.disabled = false;
-                this.textContent = 'Delete Permanently';
             }
-        });
 
-        // ============================================
-        // INITIALIZATION
-        // ============================================
-        async function init() {
-            // Show loading state
-            document.getElementById('fileGrid').innerHTML = `
-                <div class="empty-state" style="grid-column:1/-1;">
-                    <div class="spinner" style="margin:0 auto 20px;"></div>
-                    <h3>Loading videos...</h3>
-                </div>
-            `;
-            
-            await loadFiles();
-            
-            // Auto-refresh every 30 seconds
-            setInterval(() => {
-                loadFiles();
-            }, 30000);
-        }
-
-        // Add spinner style if not exists
-        if (!document.getElementById('spinnerStyle')) {
-            const style = document.createElement('style');
-            style.id = 'spinnerStyle';
-            style.textContent = `
-                .spinner {
-                    width: 40px;
-                    height: 40px;
-                    border: 4px solid rgba(255,255,255,0.1);
-                    border-top: 4px solid #6c5ce7;
-                    border-radius: 50%;
-                    animation: spin 1s linear infinite;
+            function stringToColor(str) {
+                let hash = 0;
+                for (let i = 0; i < str.length; i++) {
+                    hash = str.charCodeAt(i) + ((hash << 5) - hash);
                 }
-                @keyframes spin {
-                    to { transform: rotate(360deg); }
-                }
-            `;
-            document.head.appendChild(style);
-        }
+                const hue = Math.abs(hash % 360);
+                return `hsl(${hue}, 60%, 25%)`;
+            }
 
-        // Start the app
-        init();
+            function formatFileSize(bytes) {
+                if (!bytes) return '';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+            }
+
+            // ----- comments -----
+            function renderCommentsFromData(commentsArray) {
+                commentsList.innerHTML = '';
+                commentsArray.forEach((c, i) => {
+                    const div = document.createElement('div');
+                    div.className = 'comment-item';
+                    div.innerHTML =
+                        `<span>${c.text}</span><button data-idx="${i}"><i class="fas fa-trash-alt"></i></button>`;
+                    div.querySelector('button').addEventListener('click', (e) => {
+                        const idx = parseInt(e.currentTarget.dataset.idx);
+                        const data = getSocialData();
+                        data.comments.splice(idx, 1);
+                        saveSocialData(data);
+                        renderCommentsFromData(data.comments);
+                        updateCommentCount(data.comments.length);
+                        showToast('comment deleted');
+                    });
+                    commentsList.appendChild(div);
+                });
+                updateCommentCount(commentsArray.length);
+            }
+
+            function renderComments() {
+                const data = getSocialData();
+                renderCommentsFromData(data.comments || []);
+            }
+
+            function updateCommentCount(count) {
+                commentCountSpan.textContent = count || 0;
+            }
+
+            function addComment(text) {
+                if (!text.trim()) return;
+                const data = getSocialData();
+                data.comments.push({ text: text.trim(), time: Date.now() });
+                saveSocialData(data);
+                renderCommentsFromData(data.comments);
+                showToast('comment added');
+                commentInput.value = '';
+            }
+
+            // ----- likes / dislikes / saves -----
+            function updateLikeDislikeFromData(data) {
+                const v = playlist[currentVideoIndex];
+                if (!v) return;
+                const likes = data.likes || {};
+                const dislikes = data.dislikes || {};
+                likeCount.textContent = likes[v.id] || 0;
+                dislikeCount.textContent = dislikes[v.id] || 0;
+                const saves = data.saves || [];
+                const isSaved = saves.includes(v.id);
+                saveBtn.querySelector('i').className = isSaved ? 'fas fa-bookmark' : 'far fa-bookmark';
+            }
+
+            function handleLike() {
+                const v = playlist[currentVideoIndex];
+                if (!v) return;
+                const data = getSocialData();
+                data.likes = data.likes || {};
+                data.likes[v.id] = (data.likes[v.id] || 0) + 1;
+                saveSocialData(data);
+                likeCount.textContent = data.likes[v.id];
+                showToast('liked');
+            }
+
+            function handleDislike() {
+                const v = playlist[currentVideoIndex];
+                if (!v) return;
+                const data = getSocialData();
+                data.dislikes = data.dislikes || {};
+                data.dislikes[v.id] = (data.dislikes[v.id] || 0) + 1;
+                saveSocialData(data);
+                dislikeCount.textContent = data.dislikes[v.id];
+                showToast('disliked');
+            }
+
+            function handleSave() {
+                const v = playlist[currentVideoIndex];
+                if (!v) return;
+                const data = getSocialData();
+                data.saves = data.saves || [];
+                const idx = data.saves.indexOf(v.id);
+                if (idx > -1) {
+                    data.saves.splice(idx, 1);
+                    saveBtn.querySelector('i').className = 'far fa-bookmark';
+                    showToast('removed from saved');
+                } else {
+                    data.saves.push(v.id);
+                    saveBtn.querySelector('i').className = 'fas fa-bookmark';
+                    showToast('saved');
+                }
+                saveSocialData(data);
+            }
+
+            // ----- UPLOAD video to server -----
+            async function uploadVideoToServer(file) {
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    showToast('Uploading...');
+                    
+                    const response = await fetch(API_BASE_UPLOAD, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Upload failed: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        showToast('Upload successful!');
+                        
+                        const newVideo = {
+                            id: data.fileId,
+                            title: file.name.replace(/\.[^/.]+$/, ''),
+                            filename: file.name,
+                            src: API_BASE + data.fileId + '.mp4',
+                            fileUrl: API_BASE_FILE + data.fileId + '.mp4',
+                            poster: '',
+                            duration: '0:00',
+                            views: 0,
+                            date: new Date().toISOString().slice(0, 10),
+                            desc: 'uploaded video',
+                            fileSize: file.size
+                        };
+                        playlist.push(newVideo);
+                        renderPlaylist(searchInput.value);
+                        loadVideo(playlist.length - 1);
+                        return true;
+                    } else {
+                        showToast('Upload failed: ' + (data.message || 'Unknown error'));
+                        return false;
+                    }
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    showToast('Upload error: ' + error.message);
+                    return false;
+                }
+            }
+
+            // ----- video controls -----
+            function togglePlay() {
+                if (video.paused) {
+                    video.play().catch(e => {
+                        showToast('Error playing video');
+                        console.error('Play error:', e);
+                    });
+                } else {
+                    video.pause();
+                }
+            }
+
+            function updatePlayButton() {
+                const icon = playBtn.querySelector('i');
+                if (video.paused) {
+                    icon.className = 'fas fa-play';
+                } else {
+                    icon.className = 'fas fa-pause';
+                }
+            }
+
+            function updateProgress() {
+                if (video.duration && isFinite(video.duration)) {
+                    const pct = (video.currentTime / video.duration) * 100;
+                    progressSlider.value = pct;
+                    currentTimeSpan.textContent = formatTime(video.currentTime);
+                    durationSpan.textContent = formatTime(video.duration);
+                    if (playlist[currentVideoIndex] && playlist[currentVideoIndex].duration === '0:00' && video
+                        .duration) {
+                        playlist[currentVideoIndex].duration = formatTime(video.duration);
+                        renderPlaylist(searchInput.value);
+                    }
+                }
+            }
+
+            // ----- event listeners -----
+            playBtn.addEventListener('click', togglePlay);
+            video.addEventListener('play', updatePlayButton);
+            video.addEventListener('pause', updatePlayButton);
+            video.addEventListener('timeupdate', updateProgress);
+
+            video.addEventListener('loadedmetadata', () => {
+                durationSpan.textContent = formatTime(video.duration);
+                if (playlist[currentVideoIndex]) {
+                    playlist[currentVideoIndex].duration = formatTime(video.duration);
+                    renderPlaylist(searchInput.value);
+                }
+                videoPlaceholder.classList.add('hidden');
+                videoError.classList.add('hidden');
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 160;
+                    canvas.height = 90;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const thumbnailData = canvas.toDataURL('image/jpeg');
+                    if (playlist[currentVideoIndex]) {
+                        playlist[currentVideoIndex].poster = thumbnailData;
+                        renderPlaylist(searchInput.value);
+                    }
+                } catch (e) {}
+            });
+
+            video.addEventListener('canplay', () => {
+                videoPlaceholder.classList.add('hidden');
+                videoError.classList.add('hidden');
+            });
+
+            video.addEventListener('error', (e) => {
+                console.error('Video error:', e);
+                videoError.classList.remove('hidden');
+                errorMessage.textContent = 'Failed to load video. The server may be unavailable.';
+                videoPlaceholder.classList.add('hidden');
+                showToast('Error loading video');
+            });
+
+            video.addEventListener('ended', () => { showToast('video finished'); });
+
+            retryBtn.addEventListener('click', () => {
+                videoError.classList.add('hidden');
+                const v = playlist[currentVideoIndex];
+                if (v) {
+                    video.src = v.src;
+                    video.load();
+                    showToast('Retrying...');
+                }
+            });
+
+            skipBack.addEventListener('click', () => { video.currentTime = Math.max(0, video.currentTime - 10); });
+            skipForward.addEventListener('click', () => { video.currentTime = Math.min(video.duration, video.currentTime +
+                    10); });
+
+            progressSlider.addEventListener('input', () => {
+                if (video.duration && isFinite(video.duration)) {
+                    video.currentTime = (progressSlider.value / 100) * video.duration;
+                }
+            });
+
+            volumeSlider.addEventListener('input', () => {
+                video.volume = parseFloat(volumeSlider.value);
+                video.muted = false;
+                muteBtn.querySelector('i').className = video.volume > 0 ? 'fas fa-volume-up' : 'fas fa-volume-off';
+            });
+            muteBtn.addEventListener('click', () => {
+                video.muted = !video.muted;
+                muteBtn.querySelector('i').className = video.muted ? 'fas fa-volume-off' : 'fas fa-volume-up';
+                if (!video.muted) volumeSlider.value = video.volume;
+            });
+
+            speedSelect.addEventListener('change', () => { video.playbackRate = parseFloat(speedSelect.value); });
+
+            theaterBtn.addEventListener('click', () => {
+                isTheater = !isTheater;
+                playerWrapper.style.maxWidth = isTheater ? '100%' : '100%';
+                playerWrapper.style.borderRadius = isTheater ? '0' : '28px';
+            });
+
+            pipBtn.addEventListener('click', async () => {
+                try {
+                    if (document.pictureInPictureElement) {
+                        await document.exitPictureInPicture();
+                    } else {
+                        await video.requestPictureInPicture();
+                    }
+                } catch (e) {}
+            });
+
+            fullscreenBtn.addEventListener('click', () => {
+                if (!document.fullscreenElement) {
+                    playerWrapper.requestFullscreen?.();
+                } else {
+                    document.exitFullscreen?.();
+                }
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.target.tagName === 'INPUT') return;
+                switch (e.key) {
+                    case ' ':
+                        e.preventDefault();
+                        togglePlay();
+                        break;
+                    case 'ArrowLeft':
+                        e.preventDefault();
+                        video.currentTime = Math.max(0, video.currentTime - 5);
+                        break;
+                    case 'ArrowRight':
+                        e.preventDefault();
+                        video.currentTime = Math.min(video.duration, video.currentTime + 5);
+                        break;
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        video.volume = Math.min(1, video.volume + 0.1);
+                        volumeSlider.value = video.volume;
+                        break;
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        video.volume = Math.max(0, video.volume - 0.1);
+                        volumeSlider.value = video.volume;
+                        break;
+                    case 'f':
+                        e.preventDefault();
+                        fullscreenBtn.click();
+                        break;
+                    case 'm':
+                        e.preventDefault();
+                        muteBtn.click();
+                        break;
+                }
+            });
+
+            // ----- FILE UPLOAD -----
+            fileUpload.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (file && file.type.startsWith('video/')) {
+                    const success = await uploadVideoToServer(file);
+                    if (success) {
+                        fileUpload.value = '';
+                    }
+                } else {
+                    showToast('Please select a video file');
+                }
+            });
+
+            // ----- DRAG AND DROP -----
+            let dragCounter = 0;
+            playerWrapper.addEventListener('dragenter', (e) => {
+                e.preventDefault();
+                dragCounter++;
+                playerWrapper.classList.add('drag-over');
+            });
+            playerWrapper.addEventListener('dragover', (e) => { e.preventDefault(); });
+            playerWrapper.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                dragCounter--;
+                if (dragCounter === 0) playerWrapper.classList.remove('drag-over');
+            });
+            playerWrapper.addEventListener('drop', async (e) => {
+                e.preventDefault();
+                dragCounter = 0;
+                playerWrapper.classList.remove('drag-over');
+                const file = e.dataTransfer.files[0];
+                if (file && file.type.startsWith('video/')) {
+                    await uploadVideoToServer(file);
+                } else {
+                    showToast('Please drop a video file');
+                }
+            });
+
+            // search
+            searchInput.addEventListener('input', () => { renderPlaylist(searchInput.value); });
+
+            // social buttons
+            likeBtn.addEventListener('click', handleLike);
+            dislikeBtn.addEventListener('click', handleDislike);
+            shareBtn.addEventListener('click', () => {
+                const v = playlist[currentVideoIndex];
+                if (v && v.fileUrl) {
+                    navigator.share?.({
+                        title: v.title,
+                        text: 'Check out this video!',
+                        url: v.fileUrl
+                    }).catch(() => {
+                        navigator.clipboard?.writeText(v.fileUrl).then(() => {
+                            showToast('URL copied to clipboard!');
+                        }).catch(() => {
+                            showToast('Share: ' + v.fileUrl);
+                        });
+                    });
+                } else {
+                    showToast('No video selected');
+                }
+            });
+            saveBtn.addEventListener('click', handleSave);
+
+            // comments
+            addCommentBtn.addEventListener('click', () => { addComment(commentInput.value); });
+            commentInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { addComment(commentInput.value); }
+            });
+
+            // ----- init -----
+            async function init() {
+                renderPlaylist();
+                renderComments();
+                
+                await loadFilesFromServer();
+                
+                setTimeout(() => {
+                    loading.classList.add('hidden');
+                    app.classList.remove('hidden');
+                }, 600);
+                
+                video.controls = false;
+                video.loop = false;
+
+                // Ripple effect
+                document.querySelectorAll('.ctrl-btn, .action-bar button, .upload-label, .nav-menu a').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        const rect = this.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const y = e.clientY - rect.top;
+                        const ripple = document.createElement('span');
+                        ripple.style.cssText =
+                            `position:absolute; left:${x-30}px; top:${y-30}px; width:60px; height:60px; background:rgba(255,255,255,0.2); border-radius:50%; transform:scale(0); animation: rippleAnim 0.6s linear; pointer-events:none;`;
+                        this.style.position = 'relative';
+                        this.appendChild(ripple);
+                        setTimeout(() => ripple.remove(), 600);
+                    });
+                });
+                if (!document.getElementById('rippleStyle')) {
+                    const style = document.createElement('style');
+                    style.id = 'rippleStyle';
+                    style.textContent = `@keyframes rippleAnim { to { transform: scale(4); opacity: 0; } }`;
+                    document.head.appendChild(style);
+                }
+            }
+
+            init();
+        })();
     </script>
 </body>
-</html>
+                                </html>
