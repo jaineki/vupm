@@ -845,66 +845,51 @@
             let currentVideoIndex = 0;
             let isTheater = false;
 
-            // ----- API Base URL -----
+            // ----- API Base URL (UPDATED to your new server) -----
             const API_BASE = 'https://jay-so2u.onrender.com/stream/';
             const API_BASE_FILE = 'https://jay-so2u.onrender.com/file/';
             const API_BASE_UPLOAD = 'https://jay-so2u.onrender.com/upload';
+            const API_FILES_LIST = 'https://jay-so2u.onrender.com/files';
 
-            // ----- PLAYLIST with your video files -----
-            let playlist = [{
-                id: 1,
-                title: 'Warren singing',
-                filename: 'Messenger_creation_B4092B8A-12BF-499A-8107-1C75E2ABABA0.mp4',
-                poster: '',
-                duration: '0:00',
-                views: 0,
-                date: '2026-07-23',
-                desc: 'Warren talent singing'
-            }, {
-                id: 2,
-                title: 'Miguel Dance',
-                filename: 'received_1605038927709167.mp4',
-                poster: '',
-                duration: '0:00',
-                views: 1200,
-                date: '2026-07-20',
-                desc: 'Dance Talent'
-            }, {
-                id: 3,
-                title: 'Jerriel Dance',
-                filename: 'received_1729594975052241.mp4',
-                poster: '',
-                duration: '0:00',
-                views: 800,
-                date: '2026-07-18',
-                desc: 'Tiktok Dance'
-            }, {
-                id: 4,
-                title: 'Sturdy Dance',
-                filename: 'Messenger_creation_C95B9616-7AF5-46FD-986A-6A4C868FDE36.mp4',
-                poster: '',
-                duration: '0:00',
-                views: 800,
-                date: '2026-07-18',
-                desc: 'Sturdy dance'
-            }, {
-                id: 5,
-                title: 'TikTok Warren',
-                filename: 'Messenger_creation_DA683F5E-B230-4B29-82C9-C9ECB550CE3C.mp4',
-                poster: '',
-                duration: '0:00',
-                views: 450,
-                date: '2026-07-22',
-                desc: 'TikTok dance by Warren'
-            }];
+            // ----- PLAYLIST - Start empty, will be populated from server -----
+            let playlist = [];
 
-            // Generate full URLs for each video (supports .mp4 extension)
-            playlist.forEach(v => {
-                // Use .mp4 extension for better compatibility
-                const fileId = v.filename.replace('.mp4', '');
-                v.src = API_BASE + fileId + '.mp4';
-                v.fileUrl = API_BASE_FILE + fileId + '.mp4';
-            });
+            // ----- Load files from server -----
+            async function loadFilesFromServer() {
+                try {
+                    const response = await fetch(API_FILES_LIST);
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch files');
+                    }
+                    const data = await response.json();
+                    
+                    if (data.success && data.files && data.files.length > 0) {
+                        playlist = data.files.map(file => ({
+                            id: file.id,
+                            title: file.filename || 'Untitled',
+                            filename: file.filename,
+                            src: API_BASE + file.id + '.mp4',
+                            fileUrl: API_BASE_FILE + file.id + '.mp4',
+                            poster: '',
+                            duration: '0:00',
+                            views: 0,
+                            date: file.uploadDate ? new Date(file.uploadDate).toISOString().slice(0, 10) : 'today',
+                            desc: 'Video file',
+                            fileSize: file.fileSize || 0
+                        }));
+                        
+                        // If we have files, load the first one
+                        if (playlist.length > 0) {
+                            loadVideo(0);
+                        }
+                    }
+                    renderPlaylist(searchInput.value);
+                    showToast(`Loaded ${playlist.length} videos`);
+                } catch (error) {
+                    console.error('Error loading files:', error);
+                    showToast('Could not load files from server');
+                }
+            }
 
             // ----- shared backend (simulated with localStorage + broadcast) -----
             function getSocialData() {
@@ -951,32 +936,33 @@
 
             // ----- load video by index -----
             function loadVideo(index) {
-                if (index < 0 || index >= playlist.length) return;
+                if (index < 0 || index >= playlist.length) {
+                    videoPlaceholder.classList.remove('hidden');
+                    video.classList.add('hidden');
+                    videoTitle.textContent = 'No videos available';
+                    videoDesc.textContent = 'Upload a video to get started';
+                    return;
+                }
                 currentVideoIndex = index;
                 const v = playlist[index];
 
-                // Reset error state
                 videoError.classList.add('hidden');
                 videoPlaceholder.classList.add('hidden');
                 video.classList.remove('hidden');
 
-                // Set video source
                 video.src = v.src;
                 video.poster = v.poster || '';
                 video.load();
 
-                // Update info
                 videoTitle.textContent = v.title;
                 viewCount.textContent = v.views + ' views';
-                uploadDate.textContent = v.date;
+                uploadDate.textContent = v.date || 'today';
                 videoDesc.textContent = v.desc || 'no description';
 
-                // Update playlist highlight
                 document.querySelectorAll('.playlist-item').forEach((el, i) => {
                     el.classList.toggle('active', i === index);
                 });
 
-                // Update social data
                 const data = getSocialData();
                 const likes = data.likes || {};
                 const dislikes = data.dislikes || {};
@@ -999,6 +985,15 @@
             function renderPlaylist(filter = '') {
                 const filtered = playlist.filter(v => v.title.toLowerCase().includes(filter.toLowerCase()));
                 playlistContainer.innerHTML = '';
+                if (filtered.length === 0) {
+                    playlistContainer.innerHTML = `
+                        <div style="text-align:center;padding:20px;color:#666;font-size:0.9rem;">
+                            <i class="fas fa-video" style="font-size:2rem;display:block;margin-bottom:10px;"></i>
+                            ${playlist.length === 0 ? 'No videos uploaded yet.<br>Upload a video to get started!' : 'No matching videos'}
+                        </div>
+                    `;
+                    return;
+                }
                 filtered.forEach((v, idx) => {
                     const originalIdx = playlist.indexOf(v);
                     const div = document.createElement('div');
@@ -1007,11 +1002,19 @@
                         .title.slice(0, 3));
                     div.innerHTML = `
                         <img src="${thumb}" alt="${v.title}" loading="lazy" onerror="this.src='https://via.placeholder.com/64x44/1a1a2e/6c5ce7?text=${encodeURIComponent(v.title.slice(0,3))}'">
-                        <div class="pl-info"><div class="pl-title">${v.title}</div><div class="pl-duration">${v.duration || '0:00'}</div></div>
+                        <div class="pl-info"><div class="pl-title">${v.title}</div><div class="pl-duration">${v.duration || '0:00'} ${v.fileSize ? '· ' + formatFileSize(v.fileSize) : ''}</div></div>
                     `;
                     div.addEventListener('click', () => { loadVideo(originalIdx); });
                     playlistContainer.appendChild(div);
                 });
+            }
+
+            function formatFileSize(bytes) {
+                if (!bytes) return '';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
             }
 
             // ----- comments (shared via localStorage) -----
@@ -1132,16 +1135,17 @@
                         
                         // Add to playlist
                         const newVideo = {
-                            id: Date.now(),
+                            id: data.fileId,
                             title: file.name.replace(/\.[^/.]+$/, ''),
-                            filename: data.filename || file.name,
+                            filename: file.name,
                             src: API_BASE + data.fileId + '.mp4',
                             fileUrl: API_BASE_FILE + data.fileId + '.mp4',
                             poster: '',
                             duration: '0:00',
                             views: 0,
                             date: new Date().toISOString().slice(0, 10),
-                            desc: 'uploaded video'
+                            desc: 'uploaded video',
+                            fileSize: file.size
                         };
                         playlist.push(newVideo);
                         renderPlaylist(searchInput.value);
@@ -1207,8 +1211,6 @@
                 }
                 videoPlaceholder.classList.add('hidden');
                 videoError.classList.add('hidden');
-                showToast('video loaded');
-                // Try to capture a frame for thumbnail
                 try {
                     const canvas = document.createElement('canvas');
                     canvas.width = 160;
@@ -1238,7 +1240,6 @@
 
             video.addEventListener('ended', () => { showToast('video finished'); });
 
-            // Retry button
             retryBtn.addEventListener('click', () => {
                 videoError.classList.add('hidden');
                 const v = playlist[currentVideoIndex];
@@ -1296,7 +1297,6 @@
                 }
             });
 
-            // keyboard shortcuts
             document.addEventListener('keydown', (e) => {
                 if (e.target.tagName === 'INPUT') return;
                 switch (e.key) {
@@ -1333,14 +1333,12 @@
                 }
             });
 
-            // ----- FILE UPLOAD (with server upload) -----
+            // ----- FILE UPLOAD -----
             fileUpload.addEventListener('change', async (e) => {
                 const file = e.target.files[0];
                 if (file && file.type.startsWith('video/')) {
-                    // Upload to server
                     const success = await uploadVideoToServer(file);
                     if (success) {
-                        // Clear input
                         fileUpload.value = '';
                     }
                 } else {
@@ -1348,7 +1346,7 @@
                 }
             });
 
-            // ----- DRAG AND DROP (with server upload) -----
+            // ----- DRAG AND DROP -----
             let dragCounter = 0;
             playerWrapper.addEventListener('dragenter', (e) => {
                 e.preventDefault();
@@ -1367,7 +1365,6 @@
                 playerWrapper.classList.remove('drag-over');
                 const file = e.dataTransfer.files[0];
                 if (file && file.type.startsWith('video/')) {
-                    // Upload to server
                     await uploadVideoToServer(file);
                 } else {
                     showToast('Please drop a video file');
@@ -1388,7 +1385,6 @@
                         text: 'Check out this video!',
                         url: v.fileUrl
                     }).catch(() => {
-                        // Fallback: copy to clipboard
                         navigator.clipboard?.writeText(v.fileUrl).then(() => {
                             showToast('URL copied to clipboard!');
                         }).catch(() => {
@@ -1408,16 +1404,18 @@
             });
 
             // ----- init -----
-            function init() {
+            async function init() {
                 renderPlaylist();
                 renderComments();
-                if (playlist.length) {
-                    loadVideo(0);
-                }
+                
+                // Load files from server
+                await loadFilesFromServer();
+                
                 setTimeout(() => {
                     loading.classList.add('hidden');
                     app.classList.remove('hidden');
                 }, 600);
+                
                 video.controls = false;
                 video.loop = false;
 
