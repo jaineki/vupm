@@ -9,8 +9,45 @@ const crypto = require('crypto');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
-app.use(cors());
+// ============================================
+// CORS CONFIGURATION - Allow your domain
+// ============================================
+const allowedOrigins = [
+  'https://jay.freedev.app',
+  'https://www.jay.freedev.app',
+  'http://jay.freedev.app',
+  'http://www.jay.freedev.app',
+  'https://filevideouploader.onrender.com'
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('❌ Blocked CORS request from:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Range', 'Accept'],
+  exposedHeaders: ['Content-Range', 'Content-Length', 'Accept-Ranges'],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+// Apply CORS middleware with options
+app.use(cors(corsOptions));
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
+
+// ============================================
+// REST OF YOUR CONFIGURATION
+// ============================================
 app.use(express.json());
 app.use(express.static('public'));
 
@@ -108,7 +145,6 @@ function formatFileSize(bytes) {
 }
 
 function extractFileId(idWithExtension) {
-  // Remove .mp4, .mov, .avi, .mkv, .webm, etc. if present
   const videoExtensions = ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.mpeg', '.3gp', '.flv'];
   let cleanId = idWithExtension;
   for (const ext of videoExtensions) {
@@ -339,14 +375,14 @@ app.post('/upload/video', (req, res) => {
   });
 });
 
-// 3. STREAM VIDEO - FIXED to handle .mp4 extensions
+// 3. STREAM VIDEO - Supports .mp4 extensions
 app.get('/stream/:id', async (req, res) => {
   try {
-    // Extract and clean the file ID (remove .mp4 if present)
     let fileId = req.params.id;
     const cleanId = extractFileId(fileId);
     
     console.log(`🔍 Streaming request for: ${fileId} -> Clean ID: ${cleanId}`);
+    console.log(`🌐 Origin: ${req.get('origin') || 'direct'}`);
     
     if (!ObjectId.isValid(cleanId)) {
       return res.status(400).json({
@@ -388,7 +424,10 @@ app.get('/stream/:id', async (req, res) => {
         'Accept-Ranges': 'bytes',
         'Content-Length': chunksize,
         'Content-Type': file.contentType,
-        'Cache-Control': 'public, max-age=31557600'
+        'Cache-Control': 'public, max-age=31557600',
+        'Access-Control-Allow-Origin': req.get('origin') || '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Range, Content-Type'
       });
       
       const downloadStream = bucket.openDownloadStream(id, {
@@ -413,7 +452,10 @@ app.get('/stream/:id', async (req, res) => {
         'Content-Length': fileSize,
         'Content-Type': file.contentType,
         'Accept-Ranges': 'bytes',
-        'Cache-Control': 'public, max-age=31557600'
+        'Cache-Control': 'public, max-age=31557600',
+        'Access-Control-Allow-Origin': req.get('origin') || '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Range, Content-Type'
       });
       
       const downloadStream = bucket.openDownloadStream(id);
@@ -439,14 +481,14 @@ app.get('/stream/:id', async (req, res) => {
   }
 });
 
-// 4. GET FILE - Fixed to handle .mp4 extensions for download
+// 4. GET FILE - Supports .mp4 extensions
 app.get('/file/:id', async (req, res) => {
   try {
-    // Extract and clean the file ID (remove .mp4 if present)
     let fileId = req.params.id;
     const cleanId = extractFileId(fileId);
     
     console.log(`📥 Download request for: ${fileId} -> Clean ID: ${cleanId}`);
+    console.log(`🌐 Origin: ${req.get('origin') || 'direct'}`);
     
     if (!ObjectId.isValid(cleanId)) {
       return res.status(400).json({
@@ -476,7 +518,9 @@ app.get('/file/:id', async (req, res) => {
       'Content-Type': file.contentType || 'application/octet-stream',
       'Content-Disposition': `attachment; filename="${file.metadata?.originalName || file.filename}"`,
       'Content-Length': file.length,
-      'Cache-Control': 'public, max-age=31557600'
+      'Cache-Control': 'public, max-age=31557600',
+      'Access-Control-Allow-Origin': req.get('origin') || '*',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS'
     });
 
     const downloadStream = bucket.openDownloadStream(id);
@@ -542,7 +586,6 @@ app.get('/files', async (req, res) => {
         fileSizeFormatted: formatFileSize(file.length),
         uploadDate: file.uploadDate,
         uploadDateFormatted: new Date(file.uploadDate).toLocaleString(),
-        // Support both with and without .mp4 extension
         url: `/file/${fileId}`,
         urlWithExtension: isVideo ? `/file/${fileId}.mp4` : `/file/${fileId}`,
         streamingUrl: isVideo ? `/stream/${fileId}` : null,
@@ -669,6 +712,7 @@ app.get('/health', (req, res) => {
     database: DB_NAME,
     connected: !!db,
     nodeVersion: process.version,
+    allowedOrigins: allowedOrigins,
     endpoints: {
       upload: '/upload',
       uploadVideo: '/upload/video',
@@ -682,12 +726,16 @@ app.get('/health', (req, res) => {
   });
 });
 
-// 9. Redirect for root - show API info
+// 9. Root Route - API Info
 app.get('/', (req, res) => {
   res.json({
     name: 'File Upload API',
     version: '1.0.0',
     database: DB_NAME,
+    cors: {
+      allowedOrigins: allowedOrigins,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+    },
     endpoints: {
       'POST /upload': 'Upload any file',
       'POST /upload/video': 'Upload video with metadata',
@@ -727,6 +775,10 @@ async function startServer() {
     console.log(`📁 Serving static files from /public`);
     console.log(`🗄️  Database: ${DB_NAME}`);
     console.log(`🟢 Node.js version: ${process.version}`);
+    console.log('\n🔒 CORS Configuration:');
+    console.log(`   ✅ Allowed origins: ${allowedOrigins.join(', ')}`);
+    console.log(`   ✅ Methods: GET, POST, PUT, DELETE, OPTIONS`);
+    console.log(`   ✅ Credentials: enabled`);
     console.log('\n📌 API Endpoints:');
     console.log(`   POST   /upload           - Upload any file`);
     console.log(`   POST   /upload/video     - Upload video file`);
@@ -738,6 +790,7 @@ async function startServer() {
     console.log(`   DELETE /file/:id         - Delete file`);
     console.log('\n✨ Now supports URLs with .mp4 extension!');
     console.log(`   Example: /stream/8fd2b990b2c7199da7bbb58b5cb3301c.mp4`);
+    console.log(`\n🌐 Your site: https://jay.freedev.app is allowed!`);
   });
 }
 
