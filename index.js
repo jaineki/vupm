@@ -14,9 +14,8 @@ const PORT = process.env.PORT || 3000;
 // ============================================
 const allowedOrigins = [
   'https://jay.freedev.app',
-  'https://www.jay.freedev.app',
+  'jay.freedev.app',
   'http://jay.freedev.app',
-  'http://www.jay.freedev.app',
   'https://filevideouploader.onrender.com'
 ];
 
