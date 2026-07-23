@@ -1,595 +1,1449 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File Upload System</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+    <title>Jay Video Hub · social player</title>
+    <!-- Google Fonts: Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <style>
+        /* ---------- RESET & BASE ---------- */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Poppins', sans-serif;
+            background: #0b0b14;
+            color: #eee;
             min-height: 100vh;
-            padding: 20px;
+            display: flex;
+            justify-content: center;
+            padding: 0.8rem;
+            transition: background 0.3s;
+        }
+        body.light {
+            background: #f0f2f5;
+            color: #1a1a2e;
+        }
+        #app {
+            max-width: 1440px;
+            width: 100%;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        /* ---------- LOADING ---------- */
+        #loading-screen {
+            position: fixed;
+            inset: 0;
+            background: #0b0b14;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            transition: opacity 0.8s;
         }
-
-        h1 {
-            color: #333;
-            margin-bottom: 30px;
-            font-size: 2.5rem;
-        }
-
-        h1 span {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .upload-section {
-            background: #f8f9fa;
-            border-radius: 15px;
-            padding: 30px;
-            margin-bottom: 30px;
-            border: 2px dashed #dee2e6;
-            text-align: center;
-        }
-
-        .upload-area {
-            position: relative;
-        }
-
-        .file-input-wrapper {
-            position: relative;
-            display: inline-block;
-        }
-
-        #fileInput {
-            position: absolute;
-            left: 0;
-            top: 0;
+        #loading-screen.hidden {
             opacity: 0;
-            width: 100%;
-            height: 100%;
-            cursor: pointer;
+            pointer-events: none;
+        }
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid #2a2a3a;
+            border-top: 5px solid #6c5ce7;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        #loading-screen p {
+            margin-top: 1.2rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+            color: #aaa;
         }
 
-        .file-input-label {
-            display: inline-block;
-            padding: 12px 30px;
-            background: #667eea;
-            color: white;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 600;
+        /* ---------- GLASS & SHARED ---------- */
+        .glass {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+        body.light .glass {
+            background: rgba(255, 255, 255, 0.5);
+            border-color: rgba(0, 0, 0, 0.08);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
+        .hidden {
+            display: none !important;
         }
 
-        .file-input-label:hover {
-            background: #5a67d8;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        /* ---------- HEADER ---------- */
+        .glass-header {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.7rem 1rem;
+            padding: 0.6rem 1.2rem;
+            margin-bottom: 1.2rem;
+            border-radius: 40px;
+            background: rgba(20, 20, 30, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
         }
-
-        .file-name {
-            margin-top: 15px;
-            color: #495057;
-            font-size: 0.95rem;
+        body.light .glass-header {
+            background: rgba(255, 255, 255, 0.6);
         }
-
-        .upload-btn {
-            margin-top: 20px;
-            padding: 12px 40px;
-            background: #28a745;
-            color: white;
-            border: none;
-            border-radius: 50px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
+        .logo {
+            font-weight: 700;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
-
-        .upload-btn:hover:not(:disabled) {
-            background: #218838;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        .logo i {
+            color: #6c5ce7;
         }
-
-        .upload-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .progress-container {
-            margin-top: 20px;
-            display: none;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 10px;
-            background: #e9ecef;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            width: 0%;
-            transition: width 0.3s ease;
-        }
-
-        .progress-text {
-            margin-top: 8px;
-            color: #495057;
+        .nav-menu {
+            display: flex;
+            gap: 1rem;
+            font-weight: 400;
             font-size: 0.9rem;
         }
-
-        .status-message {
-            margin-top: 15px;
-            padding: 10px 20px;
-            border-radius: 10px;
-            display: none;
+        .nav-menu a {
+            text-decoration: none;
+            color: inherit;
+            opacity: 0.7;
+            transition: 0.2s;
         }
-
-        .status-message.success {
-            display: block;
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+        .nav-menu a:hover {
+            opacity: 1;
         }
-
-        .status-message.error {
-            display: block;
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .files-section {
-            margin-top: 30px;
-        }
-
-        .files-header {
+        .search-wrapper {
+            flex: 1;
+            min-width: 120px;
+            position: relative;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
         }
-
-        .files-header h2 {
-            color: #333;
-            font-size: 1.8rem;
-        }
-
-        .refresh-btn {
-            padding: 8px 20px;
-            background: #17a2b8;
-            color: white;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .refresh-btn:hover {
-            background: #138496;
-            transform: scale(1.05);
-        }
-
-        .files-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
-        }
-
-        .file-card {
-            background: #f8f9fa;
-            border-radius: 15px;
-            padding: 20px;
-            transition: all 0.3s ease;
-            border: 1px solid #e9ecef;
-        }
-
-        .file-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
-
-        .file-preview {
+        .search-wrapper input {
             width: 100%;
-            height: 200px;
-            background: #dee2e6;
-            border-radius: 10px;
-            margin-bottom: 15px;
+            padding: 0.4rem 0.8rem 0.4rem 2.2rem;
+            border-radius: 40px;
+            border: none;
+            background: rgba(255, 255, 255, 0.08);
+            color: #eee;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.85rem;
+            outline: none;
+            transition: 0.2s;
+        }
+        body.light .search-wrapper input {
+            background: rgba(0, 0, 0, 0.06);
+            color: #111;
+        }
+        .search-wrapper i {
+            position: absolute;
+            left: 12px;
+            opacity: 0.5;
+            font-size: 0.9rem;
+        }
+        .user-profile {
+            font-size: 1.6rem;
+            opacity: 0.8;
+            cursor: pointer;
+        }
+
+        /* ---------- MAIN GRID ---------- */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 1.2rem;
+            margin-bottom: 1.2rem;
+        }
+        @media (max-width: 860px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+        }
+
+        /* ---------- VIDEO PLAYER ---------- */
+        .player-wrapper {
+            position: relative;
+            border-radius: 28px;
             overflow: hidden;
+            background: #0a0a14;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+            width: 100%;
+            min-height: 300px;
             display: flex;
             align-items: center;
             justify-content: center;
-            position: relative;
         }
-
-        .file-preview img {
+        .player-wrapper video {
             width: 100%;
-            height: 100%;
-            object-fit: cover;
+            display: block;
+            aspect-ratio: 16 / 9;
+            background: #0a0a14;
+            object-fit: contain;
+            max-height: 80vh;
         }
-
-        .file-preview video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+        .player-wrapper .video-placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 1.2rem;
+            gap: 1rem;
+            background: #0a0a14;
         }
-
-        .file-preview .file-icon {
+        .player-wrapper .video-placeholder i {
             font-size: 4rem;
-            color: #6c757d;
+            color: #6c5ce7;
+            opacity: 0.5;
         }
-
-        .file-info {
-            margin-bottom: 15px;
+        /* custom controls */
+        .custom-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 8px 12px 10px;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            transition: opacity 0.3s;
+            z-index: 10;
         }
-
-        .file-name-display {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 5px;
-            word-break: break-all;
+        .custom-controls.hidden-controls {
+            opacity: 0;
+            pointer-events: none;
         }
-
-        .file-size {
-            color: #6c757d;
+        .progress-bar-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .progress-slider {
+            flex: 1;
+            height: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            outline: none;
+            transition: 0.2s;
+        }
+        .progress-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #6c5ce7;
+            cursor: pointer;
+            box-shadow: 0 0 8px #6c5ce7aa;
+        }
+        .progress-time {
+            display: flex;
+            gap: 8px;
+            font-size: 0.7rem;
+            opacity: 0.8;
+            white-space: nowrap;
+        }
+        .controls-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px 10px;
+        }
+        .ctrl-btn {
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 30px;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            opacity: 0.8;
+        }
+        .ctrl-btn:hover {
+            opacity: 1;
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .volume-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .volume-group input[type="range"] {
+            width: 60px;
+            height: 3px;
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+        .volume-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #6c5ce7;
+        }
+        .speed-group select {
+            background: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            border: none;
+            padding: 2px 8px;
+            border-radius: 30px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.7rem;
+            cursor: pointer;
+        }
+        /* drop overlay */
+        .drop-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(108, 92, 231, 0.15);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            font-weight: 500;
+            color: #fff;
+            pointer-events: none;
+            opacity: 0;
+            transition: 0.3s;
+            border: 3px dashed #6c5ce7;
+            margin: 16px;
+            border-radius: 30px;
+            z-index: 20;
+        }
+        .player-wrapper.drag-over .drop-overlay {
+            opacity: 1;
+        }
+        /* error message */
+        .video-error {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.8);
+            color: #ff6b6b;
+            z-index: 5;
+            padding: 2rem;
+            text-align: center;
+        }
+        .video-error i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        .video-error .retry-btn {
+            margin-top: 1rem;
+            padding: 0.5rem 2rem;
+            background: #6c5ce7;
+            border: none;
+            border-radius: 30px;
+            color: #fff;
+            cursor: pointer;
+            font-family: 'Poppins', sans-serif;
             font-size: 0.9rem;
         }
+        .video-error .retry-btn:hover {
+            background: #7c6cf7;
+        }
 
-        .file-actions {
+        /* ---------- VIDEO INFO ---------- */
+        .video-info {
+            padding: 1rem 1.4rem;
+            margin-top: 1rem;
+        }
+        .video-info h2 {
+            font-weight: 600;
+            font-size: 1.3rem;
+            word-break: break-word;
+        }
+        .meta-row {
+            opacity: 0.6;
+            font-size: 0.8rem;
+            margin: 4px 0 8px;
+        }
+        .action-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px 16px;
+            margin-top: 10px;
+            align-items: center;
+        }
+        .action-bar button,
+        .upload-label {
+            background: rgba(255, 255, 255, 0.06);
+            border: none;
+            padding: 5px 14px;
+            border-radius: 40px;
+            color: inherit;
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: 0.2s;
+            font-size: 0.85rem;
+        }
+        .action-bar button:hover,
+        .upload-label:hover {
+            background: rgba(108, 92, 231, 0.2);
+        }
+        .upload-label input {
+            display: none;
+        }
+
+        /* ---------- COMMENTS ---------- */
+        .comments-section {
+            padding: 1rem 1.4rem;
+            margin-top: 1rem;
+        }
+        .add-comment {
+            display: flex;
+            gap: 8px;
+            margin: 10px 0 14px;
+        }
+        .add-comment input {
+            flex: 1;
+            padding: 8px 14px;
+            border-radius: 40px;
+            border: none;
+            background: rgba(255, 255, 255, 0.06);
+            color: #eee;
+            font-family: 'Poppins', sans-serif;
+            outline: none;
+            font-size: 0.9rem;
+        }
+        body.light .add-comment input {
+            background: rgba(0, 0, 0, 0.06);
+            color: #111;
+        }
+        .add-comment button {
+            background: #6c5ce7;
+            border: none;
+            padding: 0 16px;
+            border-radius: 40px;
+            color: #fff;
+            cursor: pointer;
+        }
+        .comments-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .comment-item {
+            background: rgba(255, 255, 255, 0.04);
+            padding: 8px 14px;
+            border-radius: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            word-break: break-word;
+        }
+        .comment-item button {
+            background: transparent;
+            border: none;
+            color: #ff6b6b;
+            cursor: pointer;
+            flex-shrink: 0;
+            margin-left: 8px;
+        }
+
+        /* ---------- PLAYLIST SIDEBAR ---------- */
+        .playlist-sidebar {
+            padding: 1rem 0.8rem;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .playlist-sidebar h3 {
+            margin-bottom: 0.8rem;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            font-size: 1.1rem;
+        }
+        .playlist-item {
             display: flex;
             gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .file-actions button {
-            flex: 1;
-            padding: 8px 12px;
-            border: none;
-            border-radius: 8px;
+            padding: 6px 8px;
+            border-radius: 18px;
             cursor: pointer;
+            transition: 0.2s;
+            margin-bottom: 6px;
+            align-items: center;
+        }
+        .playlist-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .playlist-item.active {
+            background: rgba(108, 92, 231, 0.25);
+            border-left: 4px solid #6c5ce7;
+        }
+        .playlist-item img {
+            width: 64px;
+            height: 44px;
+            object-fit: cover;
+            border-radius: 12px;
+            background: #222;
+            flex-shrink: 0;
+        }
+        .playlist-item .pl-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .playlist-item .pl-info .pl-title {
             font-weight: 500;
-            transition: all 0.3s ease;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .playlist-item .pl-info .pl-duration {
+            font-size: 0.7rem;
+            opacity: 0.5;
+        }
+
+        /* ---------- FOOTER ---------- */
+        .glass-footer {
+            padding: 0.8rem 1.4rem;
+            border-radius: 40px;
+            margin-top: 1.2rem;
+            background: rgba(20, 20, 30, 0.5);
+            backdrop-filter: blur(6px);
+        }
+        .footer-content {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.8rem;
+        }
+        .social-icons a,
+        .contact-links a {
+            color: inherit;
+            margin: 0 4px;
+            opacity: 0.6;
+            transition: 0.2s;
+        }
+        .social-icons a:hover {
+            opacity: 1;
+        }
+
+        /* ---------- TOAST ---------- */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 999;
+            max-width: 90%;
+        }
+        .toast {
+            background: #1a1a2e;
+            color: #eee;
+            padding: 10px 20px;
+            border-radius: 40px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(6px);
+            border-left: 4px solid #6c5ce7;
+            animation: slideIn 0.4s ease;
+            font-weight: 400;
             font-size: 0.9rem;
-            min-width: 60px;
         }
-
-        .file-actions .download-btn {
-            background: #007bff;
-            color: white;
-        }
-
-        .file-actions .download-btn:hover {
-            background: #0056b3;
-        }
-
-        .file-actions .delete-btn {
-            background: #dc3545;
-            color: white;
-        }
-
-        .file-actions .delete-btn:hover {
-            background: #c82333;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #6c757d;
-        }
-
-        .empty-state .empty-icon {
-            font-size: 4rem;
-            margin-bottom: 20px;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 20px;
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(40px);
             }
-            
-            h1 {
-                font-size: 1.8rem;
+            to {
+                opacity: 1;
+                transform: translateX(0);
             }
-            
-            .files-grid {
-                grid-template-columns: 1fr;
+        }
+
+        /* ---------- RIPPLE ---------- */
+        .ripple {
+            position: relative;
+            overflow: hidden;
+        }
+        .ripple::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            width: 100px;
+            height: 100px;
+            transform: scale(0);
+            animation: rippleAnim 0.6s linear;
+        }
+        @keyframes rippleAnim {
+            to {
+                transform: scale(4);
+                opacity: 0;
             }
-            
-            .file-actions button {
-                min-width: 50px;
+        }
+
+        /* scroll */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #6c5ce7;
+            border-radius: 10px;
+        }
+
+        /* ---------- MOBILE FIRST ---------- */
+        @media (max-width: 640px) {
+            body {
+                padding: 0.4rem;
+            }
+            .glass-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+                padding: 0.6rem 1rem;
+                border-radius: 28px;
+            }
+            .nav-menu {
+                justify-content: center;
                 font-size: 0.8rem;
+                gap: 0.8rem;
+            }
+            .search-wrapper {
+                min-width: 100px;
+            }
+            .controls-row {
+                gap: 4px 6px;
+            }
+            .volume-group input[type="range"] {
+                width: 44px;
+            }
+            .ctrl-btn {
+                font-size: 0.85rem;
+                padding: 2px 4px;
+            }
+            .ctrl-btn i {
+                font-size: 0.9rem;
+            }
+            .speed-group select {
+                font-size: 0.65rem;
+                padding: 1px 6px;
+            }
+            .video-info h2 {
+                font-size: 1.1rem;
+            }
+            .action-bar button,
+            .upload-label {
+                font-size: 0.75rem;
+                padding: 4px 10px;
+            }
+            .playlist-item img {
+                width: 52px;
+                height: 36px;
+            }
+            .playlist-item .pl-info .pl-title {
+                font-size: 0.8rem;
+            }
+            .comments-section {
+                padding: 0.8rem 1rem;
+            }
+            .add-comment input {
+                font-size: 0.8rem;
+                padding: 6px 12px;
+            }
+            .glass-footer {
+                padding: 0.6rem 1rem;
+            }
+            .footer-content {
+                font-size: 0.7rem;
+                justify-content: center;
+                gap: 0.4rem;
+            }
+        }
+        @media (max-width: 400px) {
+            .controls-row .ctrl-btn {
+                font-size: 0.75rem;
+            }
+            .volume-group input[type="range"] {
+                width: 32px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>📁 <span>File Upload System</span></h1>
-        
-        <!-- Upload Section -->
-        <div class="upload-section">
-            <div class="upload-area">
-                <div class="file-input-wrapper">
-                    <input type="file" id="fileInput">
-                    <label class="file-input-label" for="fileInput">Choose File</label>
-                </div>
-                <div class="file-name" id="fileName">No file selected</div>
-                <button class="upload-btn" id="uploadBtn">Upload File</button>
-                
-                <div class="progress-container" id="progressContainer">
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progressFill"></div>
-                    </div>
-                    <div class="progress-text" id="progressText">0%</div>
-                </div>
-                
-                <div class="status-message" id="statusMessage"></div>
-            </div>
-        </div>
-
-        <!-- Files Section -->
-        <div class="files-section">
-            <div class="files-header">
-                <h2>Uploaded Files</h2>
-                <button class="refresh-btn" onclick="loadFiles()">🔄 Refresh</button>
-            </div>
-            <div id="filesContainer">
-                <div class="empty-state">
-                    <div class="empty-icon">📂</div>
-                    <p>No files uploaded yet. Upload your first file!</p>
-                </div>
-            </div>
-        </div>
+    <!-- loading -->
+    <div id="loading-screen">
+        <div class="spinner"></div>
+        <p>loading …</p>
     </div>
 
-    <script>
-        let selectedFile = null;
+    <div id="app" class="hidden">
+        <!-- header -->
+        <header class="glass-header">
+            <div class="logo"><i class="fas fa-play-circle"></i>Jay Player</div>
+            <nav class="nav-menu"><a href="#">Home</a><a href="#">Trending</a><a href="#">Subscriptions</a></nav>
+            <div class="search-wrapper"><i class="fas fa-search"></i><input type="text" id="searchInput" placeholder="Search videos..." /></div>
+            <div class="user-profile"><i class="fas fa-user-circle"></i></div>
+        </header>
 
-        // DOM Elements
-        const fileInput = document.getElementById('fileInput');
-        const fileName = document.getElementById('fileName');
-        const uploadBtn = document.getElementById('uploadBtn');
-        const progressContainer = document.getElementById('progressContainer');
-        const progressFill = document.getElementById('progressFill');
-        const progressText = document.getElementById('progressText');
-        const statusMessage = document.getElementById('statusMessage');
-        const filesContainer = document.getElementById('filesContainer');
-
-        // File selection
-        fileInput.addEventListener('change', function() {
-            if (this.files.length > 0) {
-                selectedFile = this.files[0];
-                fileName.textContent = `📄 ${selectedFile.name} (${formatFileSize(selectedFile.size)})`;
-                statusMessage.className = 'status-message';
-                statusMessage.style.display = 'none';
-            } else {
-                selectedFile = null;
-                fileName.textContent = 'No file selected';
-            }
-        });
-
-        // Upload function
-        uploadBtn.addEventListener('click', uploadFile);
-
-        async function uploadFile() {
-            if (!selectedFile) {
-                showStatus('Please select a file first', 'error');
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('file', selectedFile);
-
-            uploadBtn.disabled = true;
-            progressContainer.style.display = 'block';
-            progressFill.style.width = '0%';
-            progressText.textContent = '0%';
-            statusMessage.className = 'status-message';
-            statusMessage.style.display = 'none';
-
-            try {
-                const xhr = new XMLHttpRequest();
-                
-                xhr.upload.addEventListener('progress', (e) => {
-                    if (e.lengthComputable) {
-                        const percentComplete = Math.round((e.loaded / e.total) * 100);
-                        progressFill.style.width = percentComplete + '%';
-                        progressText.textContent = percentComplete + '%';
-                    }
-                });
-
-                xhr.addEventListener('load', function() {
-                    if (this.status === 200) {
-                        const response = JSON.parse(this.responseText);
-                        showStatus(`✅ ${response.message} - ${response.filename}`, 'success');
-                        progressFill.style.width = '100%';
-                        progressText.textContent = '100%';
-                        selectedFile = null;
-                        fileInput.value = '';
-                        fileName.textContent = 'No file selected';
-                        loadFiles(); // Refresh file list
-                    } else {
-                        const response = JSON.parse(this.responseText);
-                        showStatus(`❌ Upload failed: ${response.message || 'Unknown error'}`, 'error');
-                    }
-                    uploadBtn.disabled = false;
-                    setTimeout(() => {
-                        progressContainer.style.display = 'none';
-                    }, 3000);
-                });
-
-                xhr.addEventListener('error', function() {
-                    showStatus('❌ Network error. Please try again.', 'error');
-                    uploadBtn.disabled = false;
-                    progressContainer.style.display = 'none';
-                });
-
-                xhr.open('POST', '/upload');
-                xhr.send(formData);
-
-            } catch (error) {
-                showStatus(`❌ Error: ${error.message}`, 'error');
-                uploadBtn.disabled = false;
-                progressContainer.style.display = 'none';
-            }
-        }
-
-        // Load files
-        async function loadFiles() {
-            try {
-                const response = await fetch('/files');
-                const data = await response.json();
-
-                if (!data.success) {
-                    showStatus('Error loading files', 'error');
-                    return;
-                }
-
-                if (data.files.length === 0) {
-                    filesContainer.innerHTML = `
-                        <div class="empty-state">
-                            <div class="empty-icon">📂</div>
-                            <p>No files uploaded yet. Upload your first file!</p>
+        <div class="main-grid">
+            <!-- video section -->
+            <section class="video-section">
+                <div class="player-wrapper" id="playerWrapper">
+                    <video id="videoPlayer" preload="metadata" crossorigin="anonymous"></video>
+                    <div class="video-placeholder" id="videoPlaceholder">
+                        <i class="fas fa-play-circle"></i>
+                        <span>Select a video to play</span>
+                    </div>
+                    <div class="video-error hidden" id="videoError">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span id="errorMessage">Failed to load video</span>
+                        <button class="retry-btn" id="retryBtn">Retry</button>
+                    </div>
+                    <div class="custom-controls" id="customControls">
+                        <div class="progress-bar-container">
+                            <input type="range" class="progress-slider" id="progressSlider" value="0" min="0" max="100" step="0.1" />
+                            <div class="progress-time"><span id="currentTime">0:00</span><span id="totalDuration">0:00</span></div>
                         </div>
-                    `;
-                    return;
-                }
-
-                let html = '<div class="files-grid">';
-                data.files.forEach(file => {
-                    html += createFileCard(file);
-                });
-                html += '</div>';
-                filesContainer.innerHTML = html;
-
-            } catch (error) {
-                console.error('Error loading files:', error);
-                showStatus('Error loading files', 'error');
-            }
-        }
-
-        function createFileCard(file) {
-            const fileSize = formatFileSize(file.fileSize);
-            const uploadDate = new Date(file.uploadDate).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-
-            let previewHtml = '';
-            const fileType = file.contentType || '';
-
-            if (fileType.startsWith('image/')) {
-                previewHtml = `<img src="${file.url}" alt="${file.filename}" loading="lazy">`;
-            } else if (fileType.startsWith('video/')) {
-                previewHtml = `
-                    <video controls preload="metadata">
-                        <source src="${file.url}" type="${fileType}">
-                        Your browser does not support the video tag.
-                    </video>
-                `;
-            } else {
-                const iconMap = {
-                    'application/pdf': '📄',
-                    'application/zip': '📦',
-                    'application/msword': '📝',
-                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '📝',
-                    'application/vnd.ms-excel': '📊',
-                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '📊',
-                    'application/vnd.ms-powerpoint': '📽️',
-                    'application/vnd.openxmlformats-officedocument.presentationml.presentation': '📽️',
-                    'text/plain': '📃'
-                };
-                const icon = iconMap[fileType] || '📁';
-                previewHtml = `<div class="file-icon">${icon}</div>`;
-            }
-
-            return `
-                <div class="file-card" data-id="${file.id}">
-                    <div class="file-preview">
-                        ${previewHtml}
+                        <div class="controls-row">
+                            <button id="playPauseBtn" class="ctrl-btn"><i class="fas fa-play"></i></button>
+                            <button id="skipBackBtn" class="ctrl-btn"><i class="fas fa-backward"></i> 10</button>
+                            <button id="skipForwardBtn" class="ctrl-btn"><i class="fas fa-forward"></i> 10</button>
+                            <div class="volume-group">
+                                <button id="muteBtn" class="ctrl-btn"><i class="fas fa-volume-up"></i></button>
+                                <input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="0.8" />
+                            </div>
+                            <div class="speed-group">
+                                <select id="playbackSpeed"><option value="0.5">0.5x</option><option value="1" selected>1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="2">2x</option></select>
+                            </div>
+                            <button id="theaterBtn" class="ctrl-btn"><i class="fas fa-expand-alt"></i></button>
+                            <button id="pipBtn" class="ctrl-btn"><i class="fas fa-window-restore"></i></button>
+                            <button id="fullscreenBtn" class="ctrl-btn"><i class="fas fa-expand"></i></button>
+                        </div>
                     </div>
-                    <div class="file-info">
-                        <div class="file-name-display" title="${file.filename}">${file.filename}</div>
-                        <div class="file-size">${fileSize} • ${uploadDate}</div>
-                    </div>
-                    <div class="file-actions">
-                        <button class="download-btn" onclick="downloadFile('${file.id}')">⬇ Download</button>
-                        <button class="delete-btn" onclick="deleteFile('${file.id}')">🗑 Delete</button>
+                    <div id="dropOverlay" class="drop-overlay">📁 drop video file</div>
+                </div>
+
+                <div class="video-info glass">
+                    <h2 id="videoTitle">Select a video</h2>
+                    <div class="meta-row"><span id="viewCount">0 views</span> · <span id="uploadDate">today</span></div>
+                    <p id="videoDesc">Click a video from the playlist to start watching</p>
+                    <div class="action-bar">
+                        <button id="likeBtn"><i class="far fa-thumbs-up"></i> <span id="likeCount">0</span></button>
+                        <button id="dislikeBtn"><i class="far fa-thumbs-down"></i> <span id="dislikeCount">0</span></button>
+                        <button id="shareBtn"><i class="fas fa-share-alt"></i> Share</button>
+                        <button id="saveBtn"><i class="far fa-bookmark"></i> Save</button>
+                        <label class="upload-label"><i class="fas fa-upload"></i> Upload<input type="file" id="fileUpload" accept="video/*" /></label>
                     </div>
                 </div>
-            `;
-        }
 
-        // Download file
-        function downloadFile(fileId) {
-            window.open(`/file/${fileId}`, '_blank');
-        }
+                <div class="comments-section glass">
+                    <h3>Comments <span id="commentCount">0</span></h3>
+                    <div class="add-comment"><input type="text" id="commentInput" placeholder="Write a comment..." /><button id="addCommentBtn"><i class="fas fa-paper-plane"></i></button></div>
+                    <div id="commentsList" class="comments-list"></div>
+                </div>
+            </section>
 
-        // Delete file
-        async function deleteFile(fileId) {
-            if (!confirm('Are you sure you want to delete this file?')) {
-                return;
+            <!-- playlist -->
+            <aside class="playlist-sidebar glass">
+                <h3><i class="fas fa-list-ul"></i> Playlist</h3>
+                <div id="playlistContainer" class="playlist-container"></div>
+            </aside>
+        </div>
+
+        <footer class="glass-footer">
+            <div class="footer-content">
+                <span>© 2026 JayBohol</span>
+                <div class="social-icons"><a href="#"><i class="fab fa-github"></i></a><a href="#"><i class="fab fa-twitter"></i></a><a href="#"><i class="fab fa-youtube"></i></a></div>
+                <div class="contact-links"><a href="https://www.facebook.com/profile.php?id=61590490534032">contact</a> · <a href="#">privacy</a></div>
+            </div>
+        </footer>
+    </div>
+
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script>
+        (function() {
+            "use strict";
+
+            // ----- DOM refs -----
+            const app = document.getElementById('app');
+            const loading = document.getElementById('loading-screen');
+            const video = document.getElementById('videoPlayer');
+            const videoPlaceholder = document.getElementById('videoPlaceholder');
+            const videoError = document.getElementById('videoError');
+            const errorMessage = document.getElementById('errorMessage');
+            const retryBtn = document.getElementById('retryBtn');
+            const playBtn = document.getElementById('playPauseBtn');
+            const skipBack = document.getElementById('skipBackBtn');
+            const skipForward = document.getElementById('skipForwardBtn');
+            const progressSlider = document.getElementById('progressSlider');
+            const currentTimeSpan = document.getElementById('currentTime');
+            const durationSpan = document.getElementById('totalDuration');
+            const volumeSlider = document.getElementById('volumeSlider');
+            const muteBtn = document.getElementById('muteBtn');
+            const speedSelect = document.getElementById('playbackSpeed');
+            const theaterBtn = document.getElementById('theaterBtn');
+            const pipBtn = document.getElementById('pipBtn');
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
+            const videoTitle = document.getElementById('videoTitle');
+            const viewCount = document.getElementById('viewCount');
+            const uploadDate = document.getElementById('uploadDate');
+            const videoDesc = document.getElementById('videoDesc');
+            const likeBtn = document.getElementById('likeBtn');
+            const likeCount = document.getElementById('likeCount');
+            const dislikeBtn = document.getElementById('dislikeBtn');
+            const dislikeCount = document.getElementById('dislikeCount');
+            const shareBtn = document.getElementById('shareBtn');
+            const saveBtn = document.getElementById('saveBtn');
+            const fileUpload = document.getElementById('fileUpload');
+            const searchInput = document.getElementById('searchInput');
+            const playlistContainer = document.getElementById('playlistContainer');
+            const commentInput = document.getElementById('commentInput');
+            const addCommentBtn = document.getElementById('addCommentBtn');
+            const commentsList = document.getElementById('commentsList');
+            const commentCountSpan = document.getElementById('commentCount');
+            const toastContainer = document.getElementById('toastContainer');
+            const playerWrapper = document.getElementById('playerWrapper');
+
+            // ----- state -----
+            let currentVideoIndex = 0;
+            let isTheater = false;
+
+            // ----- API Base URL -----
+            const API_BASE = 'https://filevideouploader.onrender.com/stream/';
+            const API_BASE_FILE = 'https://filevideouploader.onrender.com/file/';
+            const API_BASE_UPLOAD = 'https://filevideouploader.onrender.com/upload';
+
+            // ----- PLAYLIST with your video files -----
+            let playlist = [{
+                id: 1,
+                title: 'Warren singing',
+                filename: 'Messenger_creation_B4092B8A-12BF-499A-8107-1C75E2ABABA0.mp4',
+                poster: '',
+                duration: '0:00',
+                views: 0,
+                date: '2026-07-23',
+                desc: 'Warren talent singing'
+            }, {
+                id: 2,
+                title: 'Miguel Dance',
+                filename: 'received_1605038927709167.mp4',
+                poster: '',
+                duration: '0:00',
+                views: 1200,
+                date: '2026-07-20',
+                desc: 'Dance Talent'
+            }, {
+                id: 3,
+                title: 'Jerriel Dance',
+                filename: 'received_1729594975052241.mp4',
+                poster: '',
+                duration: '0:00',
+                views: 800,
+                date: '2026-07-18',
+                desc: 'Tiktok Dance'
+            }, {
+                id: 4,
+                title: 'Sturdy Dance',
+                filename: 'Messenger_creation_C95B9616-7AF5-46FD-986A-6A4C868FDE36.mp4',
+                poster: '',
+                duration: '0:00',
+                views: 800,
+                date: '2026-07-18',
+                desc: 'Sturdy dance'
+            }, {
+                id: 5,
+                title: 'TikTok Warren',
+                filename: 'Messenger_creation_DA683F5E-B230-4B29-82C9-C9ECB550CE3C.mp4',
+                poster: '',
+                duration: '0:00',
+                views: 450,
+                date: '2026-07-22',
+                desc: 'TikTok dance by Warren'
+            }];
+
+            // Generate full URLs for each video (supports .mp4 extension)
+            playlist.forEach(v => {
+                // Use .mp4 extension for better compatibility
+                const fileId = v.filename.replace('.mp4', '');
+                v.src = API_BASE + fileId + '.mp4';
+                v.fileUrl = API_BASE_FILE + fileId + '.mp4';
+            });
+
+            // ----- shared backend (simulated with localStorage + broadcast) -----
+            function getSocialData() {
+                try {
+                    return JSON.parse(localStorage.getItem('social_data')) || { comments: [], likes: {}, dislikes: {},
+                        saves: [] };
+                } catch { return { comments: [], likes: {}, dislikes: {}, saves: [] }; }
+            }
+
+            function saveSocialData(data) {
+                localStorage.setItem('social_data', JSON.stringify(data));
+                try {
+                    const bc = new BroadcastChannel('social_channel');
+                    bc.postMessage({ type: 'sync', data });
+                    bc.close();
+                } catch {}
             }
 
             try {
-                const response = await fetch(`/file/${fileId}`, {
-                    method: 'DELETE'
-                });
-                const data = await response.json();
+                const bc = new BroadcastChannel('social_channel');
+                bc.onmessage = (e) => {
+                    if (e.data && e.data.type === 'sync') {
+                        renderCommentsFromData(e.data.data.comments || []);
+                        updateLikeDislikeFromData(e.data.data);
+                    }
+                };
+            } catch {}
 
-                if (data.success) {
-                    showStatus('✅ File deleted successfully', 'success');
-                    loadFiles(); // Refresh list
-                } else {
-                    showStatus(`❌ Delete failed: ${data.message}`, 'error');
-                }
-            } catch (error) {
-                showStatus(`❌ Error: ${error.message}`, 'error');
+            // ----- helpers -----
+            function formatTime(seconds) {
+                if (!seconds || isNaN(seconds) || !isFinite(seconds)) return '0:00';
+                const m = Math.floor(seconds / 60);
+                const s = Math.floor(seconds % 60);
+                return `${m}:${s.toString().padStart(2, '0')}`;
             }
-        }
 
-        // Helper functions
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
+            function showToast(msg) {
+                const t = document.createElement('div');
+                t.className = 'toast';
+                t.textContent = msg;
+                toastContainer.appendChild(t);
+                setTimeout(() => { t.remove(); }, 3000);
+            }
 
-        function showStatus(message, type) {
-            statusMessage.textContent = message;
-            statusMessage.className = 'status-message ' + type;
-            statusMessage.style.display = 'block';
-        }
+            // ----- load video by index -----
+            function loadVideo(index) {
+                if (index < 0 || index >= playlist.length) return;
+                currentVideoIndex = index;
+                const v = playlist[index];
 
-        // Load files on page load
-        document.addEventListener('DOMContentLoaded', loadFiles);
+                // Reset error state
+                videoError.classList.add('hidden');
+                videoPlaceholder.classList.add('hidden');
+                video.classList.remove('hidden');
+
+                // Set video source
+                video.src = v.src;
+                video.poster = v.poster || '';
+                video.load();
+
+                // Update info
+                videoTitle.textContent = v.title;
+                viewCount.textContent = v.views + ' views';
+                uploadDate.textContent = v.date;
+                videoDesc.textContent = v.desc || 'no description';
+
+                // Update playlist highlight
+                document.querySelectorAll('.playlist-item').forEach((el, i) => {
+                    el.classList.toggle('active', i === index);
+                });
+
+                // Update social data
+                const data = getSocialData();
+                const likes = data.likes || {};
+                const dislikes = data.dislikes || {};
+                likeCount.textContent = likes[v.id] || 0;
+                dislikeCount.textContent = dislikes[v.id] || 0;
+
+                const saves = data.saves || [];
+                const isSaved = saves.includes(v.id);
+                saveBtn.querySelector('i').className = isSaved ? 'fas fa-bookmark' : 'far fa-bookmark';
+
+                if (v.duration && v.duration !== '0:00') {
+                    durationSpan.textContent = v.duration;
+                } else {
+                    durationSpan.textContent = '0:00';
+                }
+                showToast(`loaded: ${v.title}`);
+            }
+
+            // ----- render playlist -----
+            function renderPlaylist(filter = '') {
+                const filtered = playlist.filter(v => v.title.toLowerCase().includes(filter.toLowerCase()));
+                playlistContainer.innerHTML = '';
+                filtered.forEach((v, idx) => {
+                    const originalIdx = playlist.indexOf(v);
+                    const div = document.createElement('div');
+                    div.className = 'playlist-item' + (originalIdx === currentVideoIndex ? ' active' : '');
+                    const thumb = v.poster || 'https://via.placeholder.com/64x44/1a1a2e/6c5ce7?text=' + encodeURIComponent(v
+                        .title.slice(0, 3));
+                    div.innerHTML = `
+                        <img src="${thumb}" alt="${v.title}" loading="lazy" onerror="this.src='https://via.placeholder.com/64x44/1a1a2e/6c5ce7?text=${encodeURIComponent(v.title.slice(0,3))}'">
+                        <div class="pl-info"><div class="pl-title">${v.title}</div><div class="pl-duration">${v.duration || '0:00'}</div></div>
+                    `;
+                    div.addEventListener('click', () => { loadVideo(originalIdx); });
+                    playlistContainer.appendChild(div);
+                });
+            }
+
+            // ----- comments (shared via localStorage) -----
+            function renderCommentsFromData(commentsArray) {
+                commentsList.innerHTML = '';
+                commentsArray.forEach((c, i) => {
+                    const div = document.createElement('div');
+                    div.className = 'comment-item';
+                    div.innerHTML =
+                        `<span>${c.text}</span><button data-idx="${i}"><i class="fas fa-trash-alt"></i></button>`;
+                    div.querySelector('button').addEventListener('click', (e) => {
+                        const idx = parseInt(e.currentTarget.dataset.idx);
+                        const data = getSocialData();
+                        data.comments.splice(idx, 1);
+                        saveSocialData(data);
+                        renderCommentsFromData(data.comments);
+                        updateCommentCount(data.comments.length);
+                        showToast('comment deleted');
+                    });
+                    commentsList.appendChild(div);
+                });
+                updateCommentCount(commentsArray.length);
+            }
+
+            function renderComments() {
+                const data = getSocialData();
+                renderCommentsFromData(data.comments || []);
+            }
+
+            function updateCommentCount(count) {
+                commentCountSpan.textContent = count || 0;
+            }
+
+            function addComment(text) {
+                if (!text.trim()) return;
+                const data = getSocialData();
+                data.comments.push({ text: text.trim(), time: Date.now() });
+                saveSocialData(data);
+                renderCommentsFromData(data.comments);
+                showToast('comment added');
+                commentInput.value = '';
+            }
+
+            // ----- likes / dislikes / saves (shared) -----
+            function updateLikeDislikeFromData(data) {
+                const v = playlist[currentVideoIndex];
+                if (!v) return;
+                const likes = data.likes || {};
+                const dislikes = data.dislikes || {};
+                likeCount.textContent = likes[v.id] || 0;
+                dislikeCount.textContent = dislikes[v.id] || 0;
+                const saves = data.saves || [];
+                const isSaved = saves.includes(v.id);
+                saveBtn.querySelector('i').className = isSaved ? 'fas fa-bookmark' : 'far fa-bookmark';
+            }
+
+            function handleLike() {
+                const v = playlist[currentVideoIndex];
+                if (!v) return;
+                const data = getSocialData();
+                data.likes = data.likes || {};
+                data.likes[v.id] = (data.likes[v.id] || 0) + 1;
+                saveSocialData(data);
+                likeCount.textContent = data.likes[v.id];
+                showToast('liked');
+            }
+
+            function handleDislike() {
+                const v = playlist[currentVideoIndex];
+                if (!v) return;
+                const data = getSocialData();
+                data.dislikes = data.dislikes || {};
+                data.dislikes[v.id] = (data.dislikes[v.id] || 0) + 1;
+                saveSocialData(data);
+                dislikeCount.textContent = data.dislikes[v.id];
+                showToast('disliked');
+            }
+
+            function handleSave() {
+                const v = playlist[currentVideoIndex];
+                if (!v) return;
+                const data = getSocialData();
+                data.saves = data.saves || [];
+                const idx = data.saves.indexOf(v.id);
+                if (idx > -1) {
+                    data.saves.splice(idx, 1);
+                    saveBtn.querySelector('i').className = 'far fa-bookmark';
+                    showToast('removed from saved');
+                } else {
+                    data.saves.push(v.id);
+                    saveBtn.querySelector('i').className = 'fas fa-bookmark';
+                    showToast('saved');
+                }
+                saveSocialData(data);
+            }
+
+            // ----- UPLOAD video to server -----
+            async function uploadVideoToServer(file) {
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    showToast('Uploading...');
+                    
+                    const response = await fetch(API_BASE_UPLOAD, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Upload failed: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        showToast('Upload successful!');
+                        
+                        // Add to playlist
+                        const newVideo = {
+                            id: Date.now(),
+                            title: file.name.replace(/\.[^/.]+$/, ''),
+                            filename: data.filename || file.name,
+                            src: API_BASE + data.fileId + '.mp4',
+                            fileUrl: API_BASE_FILE + data.fileId + '.mp4',
+                            poster: '',
+                            duration: '0:00',
+                            views: 0,
+                            date: new Date().toISOString().slice(0, 10),
+                            desc: 'uploaded video'
+                        };
+                        playlist.push(newVideo);
+                        renderPlaylist(searchInput.value);
+                        loadVideo(playlist.length - 1);
+                        return true;
+                    } else {
+                        showToast('Upload failed: ' + (data.message || 'Unknown error'));
+                        return false;
+                    }
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    showToast('Upload error: ' + error.message);
+                    return false;
+                }
+            }
+
+            // ----- video controls -----
+            function togglePlay() {
+                if (video.paused) {
+                    video.play().catch(e => {
+                        showToast('Error playing video');
+                        console.error('Play error:', e);
+                    });
+                } else {
+                    video.pause();
+                }
+            }
+
+            function updatePlayButton() {
+                const icon = playBtn.querySelector('i');
+                if (video.paused) {
+                    icon.className = 'fas fa-play';
+                } else {
+                    icon.className = 'fas fa-pause';
+                }
+            }
+
+            function updateProgress() {
+                if (video.duration && isFinite(video.duration)) {
+                    const pct = (video.currentTime / video.duration) * 100;
+                    progressSlider.value = pct;
+                    currentTimeSpan.textContent = formatTime(video.currentTime);
+                    durationSpan.textContent = formatTime(video.duration);
+                    if (playlist[currentVideoIndex] && playlist[currentVideoIndex].duration === '0:00' && video
+                        .duration) {
+                        playlist[currentVideoIndex].duration = formatTime(video.duration);
+                        renderPlaylist(searchInput.value);
+                    }
+                }
+            }
+
+            // ----- event listeners -----
+            playBtn.addEventListener('click', togglePlay);
+            video.addEventListener('play', updatePlayButton);
+            video.addEventListener('pause', updatePlayButton);
+            video.addEventListener('timeupdate', updateProgress);
+
+            video.addEventListener('loadedmetadata', () => {
+                durationSpan.textContent = formatTime(video.duration);
+                if (playlist[currentVideoIndex]) {
+                    playlist[currentVideoIndex].duration = formatTime(video.duration);
+                    renderPlaylist(searchInput.value);
+                }
+                videoPlaceholder.classList.add('hidden');
+                videoError.classList.add('hidden');
+                showToast('video loaded');
+                // Try to capture a frame for thumbnail
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 160;
+                    canvas.height = 90;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const thumbnailData = canvas.toDataURL('image/jpeg');
+                    if (playlist[currentVideoIndex]) {
+                        playlist[currentVideoIndex].poster = thumbnailData;
+                        renderPlaylist(searchInput.value);
+                    }
+                } catch (e) {}
+            });
+
+            video.addEventListener('canplay', () => {
+                videoPlaceholder.classList.add('hidden');
+                videoError.classList.add('hidden');
+            });
+
+            video.addEventListener('error', (e) => {
+                console.error('Video error:', e);
+                videoError.classList.remove('hidden');
+                errorMessage.textContent = 'Failed to load video. The server may be unavailable.';
+                videoPlaceholder.classList.add('hidden');
+                showToast('Error loading video');
+            });
+
+            video.addEventListener('ended', () => { showToast('video finished'); });
+
+            // Retry button
+            retryBtn.addEventListener('click', () => {
+                videoError.classList.add('hidden');
+                const v = playlist[currentVideoIndex];
+                if (v) {
+                    video.src = v.src;
+                    video.load();
+                    showToast('Retrying...');
+                }
+            });
+
+            skipBack.addEventListener('click', () => { video.currentTime = Math.max(0, video.currentTime - 10); });
+            skipForward.addEventListener('click', () => { video.currentTime = Math.min(video.duration, video.currentTime +
+                    10); });
+
+            progressSlider.addEventListener('input', () => {
+                if (video.duration && isFinite(video.duration)) {
+                    video.currentTime = (progressSlider.value / 100) * video.duration;
+                }
+            });
+
+            volumeSlider.addEventListener('input', () => {
+                video.volume = parseFloat(volumeSlider.value);
+                video.muted = false;
+                muteBtn.querySelector('i').className = video.volume > 0 ? 'fas fa-volume-up' : 'fas fa-volume-off';
+            });
+            muteBtn.addEventListener('click', () => {
+                video.muted = !video.muted;
+                muteBtn.querySelector('i').className = video.muted ? 'fas fa-volume-off' : 'fas fa-volume-up';
+                if (!video.muted) volumeSlider.value = video.volume;
+            });
+
+            speedSelect.addEventListener('change', () => { video.playbackRate = parseFloat(speedSelect.value); });
+
+            theaterBtn.addEventListener('click', () => {
+                isTheater = !isTheater;
+                playerWrapper.style.maxWidth = isTheater ? '100%' : '100%';
+                playerWrapper.style.borderRadius = isTheater ? '0' : '28px';
+            });
+
+            pipBtn.addEventListener('click', async () => {
+                try {
+                    if (document.pictureInPictureElement) {
+                        await document.exitPictureInPicture();
+                    } else {
+                        await video.requestPictureInPicture();
+                    }
+                } catch (e) {}
+            });
+
+            fullscreenBtn.addEventListener('click', () => {
+                if (!document.fullscreenElement) {
+                    playerWrapper.requestFullscreen?.();
+                } else {
+                    document.exitFullscreen?.();
+                }
+            });
+
+            // keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                if (e.target.tagName === 'INPUT') return;
+                switch (e.key) {
+                    case ' ':
+                        e.preventDefault();
+                        togglePlay();
+                        break;
+                    case 'ArrowLeft':
+                        e.preventDefault();
+                        video.currentTime = Math.max(0, video.currentTime - 5);
+                        break;
+                    case 'ArrowRight':
+                        e.preventDefault();
+                        video.currentTime = Math.min(video.duration, video.currentTime + 5);
+                        break;
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        video.volume = Math.min(1, video.volume + 0.1);
+                        volumeSlider.value = video.volume;
+                        break;
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        video.volume = Math.max(0, video.volume - 0.1);
+                        volumeSlider.value = video.volume;
+                        break;
+                    case 'f':
+                        e.preventDefault();
+                        fullscreenBtn.click();
+                        break;
+                    case 'm':
+                        e.preventDefault();
+                        muteBtn.click();
+                        break;
+                }
+            });
+
+            // ----- FILE UPLOAD (with server upload) -----
+            fileUpload.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (file && file.type.startsWith('video/')) {
+                    // Upload to server
+                    const success = await uploadVideoToServer(file);
+                    if (success) {
+                        // Clear input
+                        fileUpload.value = '';
+                    }
+                } else {
+                    showToast('Please select a video file');
+                }
+            });
+
+            // ----- DRAG AND DROP (with server upload) -----
+            let dragCounter = 0;
+            playerWrapper.addEventListener('dragenter', (e) => {
+                e.preventDefault();
+                dragCounter++;
+                playerWrapper.classList.add('drag-over');
+            });
+            playerWrapper.addEventListener('dragover', (e) => { e.preventDefault(); });
+            playerWrapper.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                dragCounter--;
+                if (dragCounter === 0) playerWrapper.classList.remove('drag-over');
+            });
+            playerWrapper.addEventListener('drop', async (e) => {
+                e.preventDefault();
+                dragCounter = 0;
+                playerWrapper.classList.remove('drag-over');
+                const file = e.dataTransfer.files[0];
+                if (file && file.type.startsWith('video/')) {
+                    // Upload to server
+                    await uploadVideoToServer(file);
+                } else {
+                    showToast('Please drop a video file');
+                }
+            });
+
+            // search
+            searchInput.addEventListener('input', () => { renderPlaylist(searchInput.value); });
+
+            // social buttons
+            likeBtn.addEventListener('click', handleLike);
+            dislikeBtn.addEventListener('click', handleDislike);
+            shareBtn.addEventListener('click', () => {
+                const v = playlist[currentVideoIndex];
+                if (v && v.fileUrl) {
+                    navigator.share?.({
+                        title: v.title,
+                        text: 'Check out this video!',
+                        url: v.fileUrl
+                    }).catch(() => {
+                        // Fallback: copy to clipboard
+                        navigator.clipboard?.writeText(v.fileUrl).then(() => {
+                            showToast('URL copied to clipboard!');
+                        }).catch(() => {
+                            showToast('Share: ' + v.fileUrl);
+                        });
+                    });
+                } else {
+                    showToast('No video selected');
+                }
+            });
+            saveBtn.addEventListener('click', handleSave);
+
+            // comments
+            addCommentBtn.addEventListener('click', () => { addComment(commentInput.value); });
+            commentInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { addComment(commentInput.value); }
+            });
+
+            // ----- init -----
+            function init() {
+                renderPlaylist();
+                renderComments();
+                if (playlist.length) {
+                    loadVideo(0);
+                }
+                setTimeout(() => {
+                    loading.classList.add('hidden');
+                    app.classList.remove('hidden');
+                }, 600);
+                video.controls = false;
+                video.loop = false;
+
+                document.querySelectorAll('.ctrl-btn, .action-bar button, .upload-label').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        const rect = this.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const y = e.clientY - rect.top;
+                        const ripple = document.createElement('span');
+                        ripple.style.cssText =
+                            `position:absolute; left:${x-30}px; top:${y-30}px; width:60px; height:60px; background:rgba(255,255,255,0.2); border-radius:50%; transform:scale(0); animation: rippleAnim 0.6s linear; pointer-events:none;`;
+                        this.style.position = 'relative';
+                        this.appendChild(ripple);
+                        setTimeout(() => ripple.remove(), 600);
+                    });
+                });
+                if (!document.getElementById('rippleStyle')) {
+                    const style = document.createElement('style');
+                    style.id = 'rippleStyle';
+                    style.textContent = `@keyframes rippleAnim { to { transform: scale(4); opacity: 0; } }`;
+                    document.head.appendChild(style);
+                }
+            }
+
+            init();
+        })();
     </script>
 </body>
-  </html>
+    </html>
