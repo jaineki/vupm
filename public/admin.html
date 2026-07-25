@@ -248,24 +248,6 @@
             border: 1px solid #3b82f6;
         }
 
-        .admin-key-input {
-            margin-bottom: 20px;
-        }
-
-        .admin-key-input input {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            font-size: 16px;
-            font-family: monospace;
-        }
-
-        .admin-key-input input:focus {
-            border-color: #667eea;
-            outline: none;
-        }
-
         .login-container {
             max-width: 400px;
             margin: 100px auto;
@@ -322,6 +304,22 @@
             display: none !important;
         }
 
+        /* Chat Preview */
+        .chat-preview {
+            width: 100%;
+            height: 400px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #1a1a2e;
+            border: 1px solid rgba(0,0,0,0.1);
+            margin-top: 16px;
+        }
+        .chat-preview iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
         @media (max-width: 768px) {
             .admin-container {
                 padding: 20px;
@@ -345,6 +343,10 @@
                 width: 100%;
                 justify-content: flex-end;
             }
+
+            .chat-preview {
+                height: 300px;
+            }
         }
     </style>
 </head>
@@ -363,7 +365,10 @@
                 <h1>🛠️ Admin Dashboard</h1>
                 <span class="badge">Restricted Access</span>
             </div>
-            <button class="btn btn-outline" onclick="logout()">Logout</button>
+            <div style="display:flex; gap:10px;">
+                <a href="/" class="btn btn-primary">🏠 Home</a>
+                <button class="btn btn-outline" onclick="logout()">Logout</button>
+            </div>
         </div>
 
         <div id="alertContainer"></div>
@@ -380,6 +385,22 @@
             <div class="stat-card">
                 <div class="number" id="usersCount">0</div>
                 <div class="label">Total Users</div>
+            </div>
+        </div>
+
+        <div class="admin-section">
+            <h3>💬 Live Chat Preview</h3>
+            <p style="color: #6b7280; font-size: 14px; margin-bottom: 12px;">
+                Monitor the chat in real-time from the admin panel
+            </p>
+            <div class="chat-preview">
+                <iframe 
+                    src="https://realtimechatapi-f2pf.onrender.com" 
+                    allow="microphone; camera; autoplay; encrypted-media;"
+                    loading="lazy"
+                    title="Chat Preview"
+                    sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
+                ></iframe>
             </div>
         </div>
 
@@ -417,10 +438,17 @@
     </div>
 
     <script>
-        // Admin password is stored on the server
-        // The client sends the password with each request
+        // ============================================
+        // API CONFIGURATION
+        // ============================================
+        // Use the external chat API
+        const API_BASE = 'https://realtimechatapi-f2pf.onrender.com';
+        
         let adminPassword = '';
 
+        // ============================================
+        // LOGIN FUNCTIONS
+        // ============================================
         function login() {
             const passwordInput = document.getElementById('adminPasswordInput');
             const errorDiv = document.getElementById('loginError');
@@ -433,13 +461,12 @@
                 return;
             }
             
-            // Test the password by trying to load stats
             testPassword(adminPassword);
         }
 
         async function testPassword(password) {
             try {
-                const response = await fetch('/api/messages?limit=1', {
+                const response = await fetch(`${API_BASE}/api/messages?limit=1`, {
                     headers: {
                         'X-Admin-Password': password
                     }
@@ -455,7 +482,6 @@
                 }
                 
                 if (response.ok) {
-                    // Password is correct
                     document.getElementById('loginContainer').style.display = 'none';
                     document.getElementById('adminDashboard').classList.remove('hidden');
                     document.getElementById('loginError').style.display = 'none';
@@ -484,6 +510,9 @@
             stopAutoRefresh();
         }
 
+        // ============================================
+        // ALERT FUNCTIONS
+        // ============================================
         function showAlert(message, type = 'info') {
             const container = document.getElementById('alertContainer');
             const alert = document.createElement('div');
@@ -497,6 +526,9 @@
             }, 5000);
         }
 
+        // ============================================
+        // API REQUEST
+        // ============================================
         async function apiRequest(url, method = 'GET', body = null) {
             try {
                 const options = {
@@ -513,7 +545,6 @@
                 
                 const response = await fetch(url, options);
                 
-                // Check if authentication failed
                 if (response.status === 401 || response.status === 403) {
                     showAlert('Session expired. Please login again.', 'danger');
                     logout();
@@ -529,22 +560,33 @@
             }
         }
 
+        // ============================================
+        // LOAD DATA
+        // ============================================
         async function loadStats() {
-            const info = await apiRequest('/api/info');
-            if (info && info.success) {
-                document.getElementById('totalMessages').textContent = info.totalMessages || 0;
-                document.getElementById('onlineUsers').textContent = info.onlineUsers || 0;
+            try {
+                const info = await apiRequest(`${API_BASE}/api/info`);
+                if (info && info.success) {
+                    document.getElementById('totalMessages').textContent = info.totalMessages || 0;
+                    document.getElementById('onlineUsers').textContent = info.onlineUsers || 0;
+                }
+            } catch (error) {
+                console.error('Stats error:', error);
             }
             
-            const users = await apiRequest('/api/users');
-            if (users && users.success) {
-                document.getElementById('usersCount').textContent = users.count || 0;
+            try {
+                const users = await apiRequest(`${API_BASE}/api/users`);
+                if (users && users.success) {
+                    document.getElementById('usersCount').textContent = users.count || 0;
+                }
+            } catch (error) {
+                console.error('Users error:', error);
             }
         }
 
         async function loadMessages() {
             const limit = document.getElementById('limitInput').value || 50;
-            const data = await apiRequest(`/api/messages?limit=${limit}`);
+            const data = await apiRequest(`${API_BASE}/api/messages?limit=${limit}`);
             
             if (data && data.success) {
                 const messageList = document.getElementById('messageList');
@@ -581,12 +623,15 @@
             showAlert('Messages refreshed', 'success');
         }
 
+        // ============================================
+        // DELETE FUNCTIONS
+        // ============================================
         async function deleteAllMessages() {
             if (!confirm('Are you sure you want to delete ALL messages? This action cannot be undone!')) {
                 return;
             }
             
-            const data = await apiRequest('/api/messages', 'DELETE');
+            const data = await apiRequest(`${API_BASE}/api/messages/all`, 'DELETE');
             if (data && data.success) {
                 showAlert(`Deleted ${data.deletedCount} messages`, 'success');
                 await refreshMessages();
@@ -598,7 +643,7 @@
                 return;
             }
             
-            const data = await apiRequest('/api/messages/old/24', 'DELETE');
+            const data = await apiRequest(`${API_BASE}/api/messages/old/24`, 'DELETE');
             if (data && data.success) {
                 showAlert(`Deleted ${data.deletedCount} messages`, 'success');
                 await refreshMessages();
@@ -616,7 +661,7 @@
                 return;
             }
             
-            const data = await apiRequest(`/api/messages/old/${hours}`, 'DELETE');
+            const data = await apiRequest(`${API_BASE}/api/messages/old/${hours}`, 'DELETE');
             if (data && data.success) {
                 showAlert(`Deleted ${data.deletedCount} messages`, 'success');
                 await refreshMessages();
@@ -634,7 +679,7 @@
                 return;
             }
             
-            const data = await apiRequest(`/api/messages/user/${userId}`, 'DELETE');
+            const data = await apiRequest(`${API_BASE}/api/messages/user/${userId}`, 'DELETE');
             if (data && data.success) {
                 showAlert(`Deleted ${data.deletedCount} messages from user ${userId}`, 'success');
                 await refreshMessages();
@@ -647,20 +692,25 @@
                 return;
             }
             
-            const data = await apiRequest(`/api/messages/${messageId}`, 'DELETE');
+            const data = await apiRequest(`${API_BASE}/api/messages/${messageId}`, 'DELETE');
             if (data && data.success) {
                 showAlert('Message deleted', 'success');
                 await refreshMessages();
             }
         }
 
+        // ============================================
+        // HELPERS
+        // ============================================
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
 
-        // Auto-refresh
+        // ============================================
+        // AUTO-REFRESH
+        // ============================================
         let refreshInterval = null;
 
         function startAutoRefresh() {
@@ -676,22 +726,22 @@
             }
         }
 
-        // Enter key for login
+        // ============================================
+        // EVENT LISTENERS
+        // ============================================
         document.getElementById('adminPasswordInput').addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 login();
             }
         });
 
-        // Enter key for user ID input
         document.getElementById('userIdInput').addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 deleteUserMessages();
             }
         });
 
-        // Initial focus
         document.getElementById('adminPasswordInput').focus();
     </script>
 </body>
-  </html>
+    </html>
