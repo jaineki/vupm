@@ -2,10 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Messenger Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+    <title>Messenger · Jay Video Hub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <style>
-        /*open source code pamore*/
         * {
             margin: 0;
             padding: 0;
@@ -13,1256 +16,189 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: #1a1a2e;
+            font-family: 'Poppins', sans-serif;
+            background: #0b0b14;
+            color: #eee;
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
+            padding: 0.8rem;
         }
 
-        .chat-container {
-            background: #ffffff;
-            border-radius: 24px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-            width: 100%;
-            max-width: 1100px;
-            height: 92vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            position: relative;
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
         }
 
-        /* Header - Messenger Style */
-        .chat-header {
-            background: #ffffff;
-            padding: 16px 24px;
+        /* Header */
+        .glass-header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #e4e6eb;
-            flex-shrink: 0;
-            z-index: 5;
+            flex-wrap: wrap;
+            gap: 0.7rem 1rem;
+            padding: 0.6rem 1.2rem;
+            margin-bottom: 1.2rem;
+            border-radius: 40px;
+            background: rgba(20, 20, 30, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
         }
-
-        .chat-header-left {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .chat-header-left .chat-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, #0084ff 0%, #00c6ff 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 20px;
+        .logo {
             font-weight: 700;
-        }
-
-        .chat-header-left h1 {
-            font-size: 20px;
-            font-weight: 700;
-            color: #1a1a2e;
-            background: linear-gradient(135deg, #0084ff 0%, #00c6ff 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .chat-header-right {
+            font-size: 1.2rem;
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 6px;
         }
-
-        .connection-status {
+        .logo i {
+            color: #6c5ce7;
+        }
+        .nav-menu {
             display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            color: #65676b;
+            gap: 0.5rem;
+            font-weight: 400;
+            font-size: 0.85rem;
+            flex-wrap: wrap;
         }
-
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            display: inline-block;
-        }
-
-        .status-dot.connected {
-            background: #31a24c;
-            animation: pulse 2s infinite;
-        }
-
-        .status-dot.disconnected {
-            background: #e41e3f;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        .user-count-badge {
-            background: #e4e6eb;
+        .nav-menu a {
+            text-decoration: none;
+            color: inherit;
+            opacity: 0.7;
+            transition: 0.2s;
+            cursor: pointer;
             padding: 4px 12px;
             border-radius: 20px;
-            font-size: 13px;
-            color: #65676b;
-            font-weight: 500;
+            white-space: nowrap;
         }
-
-        /* Chat Body */
-        .chat-body {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-            background: #f0f2f5;
+        .nav-menu a:hover {
+            opacity: 1;
+            background: rgba(255,255,255,0.05);
         }
-
-        /* Users Sidebar - Messenger Style */
-        .users-sidebar {
-            width: 280px;
-            background: #ffffff;
-            border-right: 1px solid #e4e6eb;
-            display: flex;
-            flex-direction: column;
-            flex-shrink: 0;
-        }
-
-        .users-sidebar-header {
-            padding: 16px 20px;
-            border-bottom: 1px solid #e4e6eb;
-            background: #ffffff;
-        }
-
-        .users-sidebar-header h3 {
-            font-size: 15px;
-            color: #65676b;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .users-sidebar-header h3 .online-count {
-            background: #e4e6eb;
-            padding: 0 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            color: #65676b;
-        }
-
-        .users-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 8px 0;
-        }
-
-        .user-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px 20px;
-            transition: background 0.2s;
-            cursor: pointer;
-            position: relative;
-        }
-
-        .user-item:hover {
-            background: #f0f2f5;
-        }
-
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #0084ff 0%, #00c6ff 100%);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 16px;
-            flex-shrink: 0;
-            position: relative;
-        }
-
-        .user-avatar .online-indicator {
-            position: absolute;
-            bottom: 0;
-            right: 0;
-            width: 12px;
-            height: 12px;
-            background: #31a24c;
-            border: 2px solid white;
-            border-radius: 50%;
-        }
-
-        .user-avatar.current-user-avatar {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-        }
-
-        .user-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .user-name {
-            font-size: 15px;
-            font-weight: 500;
-            color: #1a1a2e;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .user-name .you-badge {
-            font-size: 11px;
-            color: #65676b;
-            font-weight: 400;
-        }
-
-        .user-name.current-user {
+        .nav-menu a.active {
+            opacity: 1;
             color: #0084ff;
+            background: rgba(0,132,255,0.2);
         }
 
-        .user-status {
-            font-size: 12px;
-            color: #65676b;
-            margin-top: 2px;
-        }
-
-        .user-status.online {
-            color: #31a24c;
-        }
-
-        /* Chat Main Area - Messenger Style */
-        .chat-main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: #f0f2f5;
-            min-width: 0;
-        }
-
-        /* Messages Container */
-        .chat-messages-wrapper {
-            flex: 1;
+        /* Chat Container */
+        .chat-wrapper {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
             overflow: hidden;
-            position: relative;
-            background: #f0f2f5;
+            height: 80vh;
+        }
+        .chat-wrapper iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: transparent;
         }
 
-        .chat-messages {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            padding: 20px 24px;
-            overflow-y: auto;
-            overflow-x: hidden;
+        /* Footer */
+        .glass-footer {
+            padding: 0.8rem 1.4rem;
+            border-radius: 40px;
+            margin-top: 1.2rem;
+            background: rgba(20, 20, 30, 0.5);
+            backdrop-filter: blur(6px);
+        }
+        .footer-content {
             display: flex;
-            flex-direction: column;
-            gap: 2px;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.8rem;
         }
-
-        /* Message Styles - Messenger Style */
-        .message {
-            display: flex;
-            flex-direction: column;
-            animation: slideIn 0.3s ease-out;
-            max-width: 65%;
-            margin-bottom: 4px;
+        .social-icons a,
+        .contact-links a {
+            color: inherit;
+            margin: 0 4px;
+            opacity: 0.6;
+            transition: 0.2s;
+            text-decoration: none;
         }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .message.own {
-            align-self: flex-end;
-            align-items: flex-end;
-        }
-
-        .message.other {
-            align-self: flex-start;
-            align-items: flex-start;
-        }
-
-        .message.system {
-            align-self: center;
-            max-width: 90%;
-            margin: 8px 0;
-        }
-
-        .message-bubble {
-            position: relative;
-            padding: 8px 14px;
-            border-radius: 18px;
-            word-wrap: break-word;
-            line-height: 1.4;
-            font-size: 15px;
-        }
-
-        .message.own .message-bubble {
-            background: #0084ff;
-            color: white;
-            border-bottom-right-radius: 4px;
-        }
-
-        .message.other .message-bubble {
-            background: #ffffff;
-            color: #1a1a2e;
-            border-bottom-left-radius: 4px;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-        }
-
-        .message.system .message-bubble {
-            background: rgba(0, 0, 0, 0.06);
-            color: #65676b;
-            font-size: 13px;
-            padding: 4px 16px;
-            border-radius: 12px;
-        }
-
-        .message .message-header {
-            display: flex;
-            align-items: baseline;
-            gap: 8px;
-            margin-bottom: 2px;
-        }
-
-        .message.other .message-header .username {
-            font-weight: 600;
-            font-size: 13px;
-            color: #0084ff;
-        }
-
-        .message.own .message-header .username {
-            font-weight: 600;
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.8);
-        }
-
-        .message .timestamp {
-            font-size: 11px;
-            color: #8a8d91;
-            margin-left: 4px;
-        }
-
-        .message.own .timestamp {
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        .message .message-actions {
-            display: flex;
-            gap: 4px;
-            margin-top: 2px;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-
-        .message:hover .message-actions {
+        .social-icons a:hover {
             opacity: 1;
         }
 
-        .message.own .message-actions {
-            justify-content: flex-end;
-        }
-
-        .message-actions button {
-            background: none;
-            border: none;
-            color: #8a8d91;
-            font-size: 12px;
-            cursor: pointer;
-            padding: 2px 8px;
-            border-radius: 4px;
-            transition: background 0.2s, color 0.2s;
-        }
-
-        .message-actions button:hover {
-            background: #e4e6eb;
-            color: #e41e3f;
-        }
-
-        .message.deleted .message-bubble {
-            opacity: 0.6;
-            font-style: italic;
-            background: #e4e6eb !important;
-            color: #65676b !important;
-        }
-
-        /* Typing Indicator */
-        .typing-indicator {
-            padding: 8px 24px;
-            font-size: 14px;
-            color: #65676b;
-            min-height: 32px;
-            display: flex;
-            align-items: center;
-            flex-shrink: 0;
-            background: #f0f2f5;
-        }
-
-        .typing-indicator .typing-dots {
-            display: inline-flex;
-            gap: 4px;
-            margin-left: 4px;
-        }
-
-        .typing-indicator .typing-dot {
-            width: 6px;
-            height: 6px;
-            background: #65676b;
-            border-radius: 50%;
-            animation: typingBounce 1.4s infinite;
-        }
-
-        .typing-indicator .typing-dot:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-
-        .typing-indicator .typing-dot:nth-child(3) {
-            animation-delay: 0.4s;
-        }
-
-        @keyframes typingBounce {
-            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-            30% { transform: translateY(-6px); opacity: 1; }
-        }
-
-        /* Input Area - Messenger Style */
-        .chat-input-area {
-            padding: 12px 20px;
-            background: #ffffff;
-            border-top: 1px solid #e4e6eb;
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            flex-shrink: 0;
-        }
-
-        .chat-input-area .input-wrapper {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            background: #f0f2f5;
-            border-radius: 24px;
-            padding: 0 16px;
-            transition: background 0.2s;
-        }
-
-        .chat-input-area .input-wrapper:focus-within {
-            background: #e4e6eb;
-        }
-
-        .chat-input-area input[type="text"] {
-            flex: 1;
-            padding: 10px 0;
-            border: none;
-            background: transparent;
-            font-size: 15px;
-            outline: none;
-            font-family: inherit;
-            color: #1a1a2e;
-            min-height: 40px;
-        }
-
-        .chat-input-area input[type="text"]::placeholder {
-            color: #8a8d91;
-        }
-
-        .chat-input-area input[type="text"]:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .chat-input-area .send-button {
-            width: 44px;
-            height: 44px;
-            background: linear-gradient(135deg, #0084ff 0%, #00c6ff 100%);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            font-size: 18px;
-            cursor: pointer;
-            transition: transform 0.1s, box-shadow 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .chat-input-area .send-button:hover:not(:disabled) {
-            transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(0, 132, 255, 0.4);
-        }
-
-        .chat-input-area .send-button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .chat-input-area .send-button svg {
-            width: 20px;
-            height: 20px;
-            fill: currentColor;
-        }
-
-        /* Scroll to Bottom Button */
-        .scroll-to-bottom {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            background: #ffffff;
-            border: none;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-            transition: transform 0.2s, box-shadow 0.2s;
-            z-index: 5;
-            color: #0084ff;
-            font-size: 20px;
-        }
-
-        .scroll-to-bottom:hover {
-            transform: scale(1.1);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        }
-
-        .scroll-to-bottom.show {
-            display: flex;
-        }
-
-        /* Login Overlay - Messenger Style */
-        .login-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(8px);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border-radius: 24px;
-            z-index: 10;
-        }
-
-        .login-box {
-            background: white;
-            padding: 48px;
-            border-radius: 20px;
-            max-width: 420px;
-            width: 90%;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        }
-
-        .login-box .login-icon {
-            width: 64px;
-            height: 64px;
-            background: linear-gradient(135deg, #0084ff 0%, #00c6ff 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-            font-size: 32px;
-            color: white;
-        }
-
-        .login-box h2 {
-            text-align: center;
-            margin-bottom: 8px;
-            color: #1a1a2e;
-            font-size: 24px;
-        }
-
-        .login-box p {
-            text-align: center;
-            color: #65676b;
-            margin-bottom: 28px;
-            font-size: 15px;
-        }
-
-        .login-box .input-group {
-            position: relative;
-            margin-bottom: 16px;
-        }
-
-        .login-box .input-group input {
-            width: 100%;
-            padding: 14px 16px;
-            border: 2px solid #e4e6eb;
-            border-radius: 12px;
-            font-size: 15px;
-            outline: none;
-            transition: border-color 0.2s;
-            font-family: inherit;
-            background: #f0f2f5;
-        }
-
-        .login-box .input-group input:focus {
-            border-color: #0084ff;
-            background: white;
-        }
-
-        .login-box .join-button {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #0084ff 0%, #00c6ff 100%);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.1s, box-shadow 0.2s;
-        }
-
-        .login-box .join-button:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0, 132, 255, 0.4);
-        }
-
-        .login-box .join-button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .login-box .error-message {
-            color: #e41e3f;
-            font-size: 13px;
-            margin-top: 12px;
-            text-align: center;
-            display: none;
-        }
-
-        .login-box .error-message.show {
-            display: block;
-        }
-
-        /* Scrollbar Styling - Messenger Style */
-        .chat-messages::-webkit-scrollbar,
-        .users-list::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .chat-messages::-webkit-scrollbar-track,
-        .users-list::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .chat-messages::-webkit-scrollbar-thumb,
-        .users-list::-webkit-scrollbar-thumb {
-            background: #ced0d4;
-            border-radius: 3px;
-        }
-
-        .chat-messages::-webkit-scrollbar-thumb:hover,
-        .users-list::-webkit-scrollbar-thumb:hover {
-            background: #b0b3b8;
-        }
-
-        /* Responsive */
         @media (max-width: 768px) {
-            .chat-body {
+            body {
+                padding: 0.4rem;
+            }
+            .glass-header {
                 flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+                padding: 0.6rem 1rem;
+                border-radius: 28px;
             }
-            
-            .users-sidebar {
-                width: 100%;
-                max-height: 180px;
-                border-right: none;
-                border-bottom: 1px solid #e4e6eb;
+            .nav-menu {
+                justify-content: center;
+                font-size: 0.75rem;
+                gap: 0.4rem;
             }
-
-            .chat-container {
-                height: 95vh;
-                border-radius: 16px;
+            .nav-menu a {
+                padding: 3px 8px;
             }
-
-            .login-box {
-                padding: 32px 24px;
+            .chat-wrapper {
+                height: 75vh;
             }
-
-            .message {
-                max-width: 80%;
+            .glass-footer {
+                padding: 0.6rem 1rem;
             }
-
-            .chat-messages {
-                padding: 12px 16px;
-            }
-
-            .chat-header {
-                padding: 12px 16px;
-            }
-
-            .chat-input-area {
-                padding: 8px 12px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .chat-header-left h1 {
-                font-size: 16px;
-            }
-
-            .chat-header-left .chat-icon {
-                width: 32px;
-                height: 32px;
-                font-size: 16px;
-            }
-
-            .user-count-badge {
-                font-size: 11px;
-                padding: 2px 8px;
-            }
-
-            .user-item {
-                padding: 8px 12px;
-            }
-
-            .user-avatar {
-                width: 32px;
-                height: 32px;
-                font-size: 13px;
+            .footer-content {
+                font-size: 0.7rem;
+                justify-content: center;
+                gap: 0.4rem;
             }
         }
     </style>
 </head>
 <body>
-    <div class="chat-container">
-        <!-- Chat Header - Messenger Style -->
-        <div class="chat-header">
-            <div class="chat-header-left">
-                <div class="chat-icon">💬</div>
-                <h1>Messenger</h1>
-            </div>
-            <div class="chat-header-right">
-                <a href="/" class="btn" style="background:#e4e6eb;border:none;padding:6px 16px;border-radius:20px;font-size:13px;color:#1a1a2e;text-decoration:none;font-weight:500;">🏠 Home</a>
-                <div class="connection-status">
-                    <span class="status-dot disconnected" id="statusDot"></span>
-                    <span id="statusText">Connecting...</span>
-                </div>
-                <span class="user-count-badge" id="userCount">0 online</span>
-            </div>
+    <div class="container">
+        <!-- Header -->
+        <header class="glass-header">
+            <div class="logo"><i class="fas fa-play-circle"></i>Jay Player</div>
+            <nav class="nav-menu">
+                <a href="/">Home</a>
+                <a href="/rename.html">📁 Manage Files</a>
+                <a href="/chat.html" class="active">💬 Messenger</a>
+                <a href="/admin.html">⚙️ Admin</a>
+            </nav>
+            <div style="flex:1;min-width:80px;"></div>
+            <div class="user-profile"><i class="fas fa-user-circle"></i></div>
+        </header>
+
+        <!-- Chat -->
+        <div class="chat-wrapper">
+            <iframe 
+                src="https://realtimechatapi-f2pf.onrender.com" 
+                allow="microphone; camera; autoplay; encrypted-media;"
+                loading="lazy"
+                title="Messenger Chat"
+                sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
+            ></iframe>
         </div>
 
-        <!-- Chat Body -->
-        <div class="chat-body">
-            <!-- Users Sidebar -->
-            <div class="users-sidebar">
-                <div class="users-sidebar-header">
-                    <h3>
-                        Online Friends
-                        <span class="online-count" id="onlineCount">0</span>
-                    </h3>
+        <!-- Footer -->
+        <footer class="glass-footer">
+            <div class="footer-content">
+                <span>© <span id="copyrightYear">2026</span> JayBohol</span>
+                <div class="social-icons">
+                    <a href="#"><i class="fab fa-github"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-youtube"></i></a>
                 </div>
-                <div class="users-list" id="userList">
-                    <div style="color: #65676b; font-size: 14px; text-align: center; padding: 30px 0;">
-                        No one's online yet
-                    </div>
+                <div class="contact-links">
+                    <a href="mailto:jaybohol@example.com">contact</a> · 
+                    <a href="#">privacy</a>
                 </div>
             </div>
-
-            <!-- Chat Main Area -->
-            <div class="chat-main">
-                <!-- Messages -->
-                <div class="chat-messages-wrapper">
-                    <div class="chat-messages" id="messageContainer">
-                        <div class="message system">
-                            <div class="message-bubble">💬 Welcome to Messenger! Join to start chatting.</div>
-                        </div>
-                    </div>
-                    <button class="scroll-to-bottom" id="scrollToBottom" title="Scroll to bottom">↓</button>
-                </div>
-
-                <!-- Typing Indicator -->
-                <div class="typing-indicator" id="typingIndicator"></div>
-
-                <!-- Input Area - Messenger Style -->
-                <div class="chat-input-area">
-                    <div class="input-wrapper">
-                        <input 
-                            type="text" 
-                            id="messageInput" 
-                            placeholder="Type a message..." 
-                            disabled
-                        >
-                    </div>
-                    <button class="send-button" id="sendButton" disabled>
-                        <svg viewBox="0 0 24 24">
-                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Login Overlay -->
-        <div class="login-overlay" id="loginOverlay">
-            <div class="login-box">
-                <div class="login-icon">💬</div>
-                <h2>Join Messenger</h2>
-                <p>Enter your name to start chatting with friends</p>
-                <div class="input-group">
-                    <input 
-                        type="text" 
-                        id="usernameInput" 
-                        placeholder="Enter your name..." 
-                        maxlength="30"
-                        autofocus
-                    >
-                </div>
-                <button class="join-button" id="joinButton">Start Chatting</button>
-                <div class="error-message" id="loginError"></div>
-            </div>
-        </div>
+        </footer>
     </div>
 
-    <!-- Load Socket.IO from external CDN or use the external chat API -->
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script>
-        // ============================================
-        // CONFIGURATION - Use external chat API
-        // ============================================
-        const CHAT_API_URL = 'https://realtimechatapi-f2pf.onrender.com';
-        
-        // Connect to the external chat server
-        const socket = io(CHAT_API_URL, {
-            transports: ['websocket', 'polling'],
-            reconnection: true,
-            reconnectionAttempts: Infinity,
-            reconnectionDelay: 1000,
-            reconnectionDelayMax: 5000
-        });
-        
-        // DOM Elements
-        const loginOverlay = document.getElementById('loginOverlay');
-        const usernameInput = document.getElementById('usernameInput');
-        const joinButton = document.getElementById('joinButton');
-        const messageInput = document.getElementById('messageInput');
-        const sendButton = document.getElementById('sendButton');
-        const messageContainer = document.getElementById('messageContainer');
-        const userList = document.getElementById('userList');
-        const typingIndicator = document.getElementById('typingIndicator');
-        const statusDot = document.getElementById('statusDot');
-        const statusText = document.getElementById('statusText');
-        const userCount = document.getElementById('userCount');
-        const onlineCount = document.getElementById('onlineCount');
-        const loginError = document.getElementById('loginError');
-        const scrollToBottomBtn = document.getElementById('scrollToBottom');
-
-        let currentUser = null;
-        let typingTimeout = null;
-        let isTyping = false;
-        let isConnected = false;
-        let isAtBottom = true;
-
-        // Scroll management
-        function isScrollAtBottom() {
-            const threshold = 50;
-            return messageContainer.scrollHeight - messageContainer.scrollTop - messageContainer.clientHeight < threshold;
-        }
-
-        function scrollToBottom() {
-            messageContainer.scrollTop = messageContainer.scrollHeight;
-        }
-
-        function updateScrollButton() {
-            if (isScrollAtBottom()) {
-                scrollToBottomBtn.classList.remove('show');
-                isAtBottom = true;
-            } else {
-                scrollToBottomBtn.classList.add('show');
-                isAtBottom = false;
-            }
-        }
-
-        messageContainer.addEventListener('scroll', updateScrollButton);
-        scrollToBottomBtn.addEventListener('click', scrollToBottom);
-
-        // Socket event listeners
-        socket.on('connect', () => {
-            isConnected = true;
-            updateConnectionStatus(true);
-            console.log('Connected to chat server');
-            
-            if (currentUser) {
-                socket.emit('user:join', { username: currentUser.username });
-            }
-        });
-
-        socket.on('disconnect', () => {
-            isConnected = false;
-            updateConnectionStatus(false);
-            if (currentUser) {
-                addSystemMessage('Disconnected. Reconnecting...');
-            }
-        });
-
-        socket.on('reconnect', () => {
-            console.log('Reconnected');
-            if (currentUser) {
-                socket.emit('user:join', { username: currentUser.username });
-            }
-        });
-
-        socket.on('connect_error', (error) => {
-            console.error('Connection error:', error);
-            updateConnectionStatus(false);
-            if (!currentUser) {
-                showError('Connection error. Please refresh.');
-            }
-        });
-
-        socket.on('error', (data) => {
-            showError(data.message);
-        });
-
-        socket.on('messages:history', (historyMessages) => {
-            const welcomeMsg = messageContainer.querySelector('.message.system');
-            if (welcomeMsg) {
-                welcomeMsg.remove();
-            }
-            
-            historyMessages.forEach(message => {
-                addMessage(message, false);
-            });
-            
-            setTimeout(scrollToBottom, 100);
-        });
-
-        socket.on('user:joined', (data) => {
-            currentUser = data;
-            loginOverlay.style.display = 'none';
-            messageInput.disabled = false;
-            sendButton.disabled = false;
-            messageInput.focus();
-            addSystemMessage(`👋 Welcome, ${data.username}!`);
-        });
-
-        socket.on('user:join', (data) => {
-            addSystemMessage(`${data.username} joined the chat`);
-        });
-
-        socket.on('user:leave', (data) => {
-            addSystemMessage(`${data.username} left the chat`);
-        });
-
-        socket.on('users:update', (users) => {
-            updateUserList(users);
-            const count = users.length;
-            userCount.textContent = `${count} online`;
-            onlineCount.textContent = count;
-        });
-
-        socket.on('message:new', (message) => {
-            addMessage(message, true);
-        });
-
-        socket.on('message:deleted', (data) => {
-            // Find and mark the deleted message
-            const messageElements = messageContainer.querySelectorAll('.message:not(.system)');
-            messageElements.forEach(element => {
-                const messageId = element.dataset.messageId;
-                if (messageId === data.messageId) {
-                    const bubble = element.querySelector('.message-bubble');
-                    if (bubble) {
-                        bubble.textContent = '🗑️ Message deleted';
-                        element.classList.add('deleted');
-                        // Remove delete button if exists
-                        const actions = element.querySelector('.message-actions');
-                        if (actions) {
-                            const deleteBtn = actions.querySelector('button');
-                            if (deleteBtn) {
-                                deleteBtn.remove();
-                            }
-                        }
-                    }
-                }
-            });
-        });
-
-        socket.on('messages:cleared', (data) => {
-            const messages = messageContainer.querySelectorAll('.message:not(.system)');
-            messages.forEach(msg => msg.remove());
-            addSystemMessage(`🗑️ All messages cleared by admin (${data.deletedCount} deleted)`);
-        });
-
-        socket.on('typing:start', (data) => {
-            if (data.userId !== currentUser?.userId) {
-                showTypingIndicator(`${data.username} is typing`);
-            }
-        });
-
-        socket.on('typing:stop', (data) => {
-            if (data.userId !== currentUser?.userId) {
-                hideTypingIndicator();
-            }
-        });
-
-        // UI Functions
-        function updateConnectionStatus(connected) {
-            if (connected) {
-                statusDot.className = 'status-dot connected';
-                statusText.textContent = 'Online';
-            } else {
-                statusDot.className = 'status-dot disconnected';
-                statusText.textContent = 'Offline';
-            }
-        }
-
-        function updateUserList(users) {
-            if (users.length === 0) {
-                userList.innerHTML = `
-                    <div style="color: #65676b; font-size: 14px; text-align: center; padding: 30px 0;">
-                        No one's online yet
-                    </div>
-                `;
-                return;
-            }
-
-            const currentUserId = currentUser?.userId;
-            userList.innerHTML = users.map(user => {
-                const isCurrent = user.userId === currentUserId;
-                const avatarColor = isCurrent ? 'current-user-avatar' : '';
-                return `
-                    <div class="user-item">
-                        <div class="user-avatar ${avatarColor}">
-                            ${user.username.charAt(0).toUpperCase()}
-                            <span class="online-indicator"></span>
-                        </div>
-                        <div class="user-info">
-                            <div class="user-name ${isCurrent ? 'current-user' : ''}">
-                                ${user.username}
-                                ${isCurrent ? '<span class="you-badge">(You)</span>' : ''}
-                            </div>
-                            <div class="user-status online">● Online</div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function addMessage(message, animate = true) {
-            const isOwn = message.userId === currentUser?.userId;
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${isOwn ? 'own' : 'other'}`;
-            messageDiv.dataset.messageId = message.id;
-            
-            if (!animate) {
-                messageDiv.style.animation = 'none';
-            }
-
-            const time = new Date(message.timestamp).toLocaleTimeString('en-US', {
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-
-            const header = isOwn ? '' : `<div class="message-header"><span class="username">${escapeHtml(message.username)}</span></div>`;
-            
-            messageDiv.innerHTML = `
-                ${header}
-                <div class="message-bubble">${escapeHtml(message.message)}</div>
-                <div class="message-actions">
-                    <span class="timestamp">${time}</span>
-                    ${isOwn ? `<button onclick="deleteOwnMessage('${message.id}')">Delete</button>` : ''}
-                </div>
-            `;
-
-            messageContainer.appendChild(messageDiv);
-            
-            if (isAtBottom || isScrollAtBottom()) {
-                setTimeout(scrollToBottom, 50);
-            }
-        }
-
-        function addSystemMessage(text) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'message system';
-            messageDiv.innerHTML = `
-                <div class="message-bubble">${escapeHtml(text)}</div>
-            `;
-            messageContainer.appendChild(messageDiv);
-            
-            if (isAtBottom || isScrollAtBottom()) {
-                setTimeout(scrollToBottom, 50);
-            }
-        }
-
-        function showTypingIndicator(text) {
-            typingIndicator.innerHTML = `
-                <span>
-                    ${text}
-                    <span class="typing-dots">
-                        <span class="typing-dot"></span>
-                        <span class="typing-dot"></span>
-                        <span class="typing-dot"></span>
-                    </span>
-                </span>
-            `;
-        }
-
-        function hideTypingIndicator() {
-            typingIndicator.innerHTML = '';
-        }
-
-        function showError(message) {
-            loginError.textContent = message;
-            loginError.className = 'error-message show';
-            setTimeout(() => {
-                loginError.className = 'error-message';
-            }, 5000);
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        // Delete own message function
-        window.deleteOwnMessage = function(messageId) {
-            if (!currentUser) {
-                alert('You must be logged in to delete messages');
-                return;
-            }
-            
-            if (!confirm('Delete this message?')) {
-                return;
-            }
-            
-            fetch(`${CHAT_API_URL}/api/messages/${messageId}`, {
-                method: 'DELETE',
-                headers: {
-                    'X-User-Id': currentUser.userId
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(data => {
-                        throw new Error(data.message || 'Failed to delete message');
-                    });
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    console.log('Message deleted');
-                } else {
-                    alert('Failed to delete message: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error deleting message:', error);
-                alert(error.message || 'Error deleting message');
-            });
-        };
-
-        // Event handlers
-        function handleJoin() {
-            const username = usernameInput.value.trim();
-            if (!username) {
-                showError('Please enter your name');
-                return;
-            }
-
-            if (username.length > 30) {
-                showError('Name must be 30 characters or less');
-                return;
-            }
-
-            joinButton.disabled = true;
-            joinButton.textContent = 'Joining...';
-            socket.emit('user:join', { username });
-            
-            setTimeout(() => {
-                joinButton.disabled = false;
-                joinButton.textContent = 'Start Chatting';
-            }, 2000);
-        }
-
-        function handleSend() {
-            const message = messageInput.value.trim();
-            if (!message) {
-                messageInput.focus();
-                return;
-            }
-
-            socket.emit('message:send', { message });
-            messageInput.value = '';
-            messageInput.focus();
-            
-            if (isTyping) {
-                socket.emit('typing:stop');
-                isTyping = false;
-                clearTimeout(typingTimeout);
-            }
-        }
-
-        function handleTyping() {
-            if (!currentUser || !isConnected) return;
-
-            if (!isTyping) {
-                isTyping = true;
-                socket.emit('typing:start');
-            }
-
-            clearTimeout(typingTimeout);
-            typingTimeout = setTimeout(() => {
-                if (isTyping) {
-                    isTyping = false;
-                    socket.emit('typing:stop');
-                }
-            }, 800);
-        }
-
-        // Event listeners
-        joinButton.addEventListener('click', handleJoin);
-        usernameInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                handleJoin();
-            }
-        });
-
-        sendButton.addEventListener('click', handleSend);
-        messageInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-            }
-        });
-
-        messageInput.addEventListener('input', handleTyping);
-
-        setTimeout(() => usernameInput.focus(), 500);
-        setTimeout(scrollToBottom, 100);
+        document.getElementById('copyrightYear').textContent = new Date().getFullYear();
     </script>
 </body>
 </html>
