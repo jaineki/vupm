@@ -10,6 +10,10 @@ require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
+
+// ============================================
+// SOCKET.IO CONFIGURATION
+// ============================================
 const io = new Server(server, {
   cors: {
     origin: "*",
@@ -28,25 +32,25 @@ app.use(express.urlencoded({ extended: true, limit: '500mb' }));
 app.use(express.static("public"));
 
 // ============================================
-// CONFIGURATION
-// ============================================
-const MONGODB_URI = process.env.MONGODB_URI;
-const DB_NAME = process.env.DB_NAME || 'videos';
-const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE) || 500 * 1024 * 1024;
-const MAX_VIDEO_SIZE = parseInt(process.env.MAX_VIDEO_SIZE) || 1000 * 1024 * 1024;
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
-
-let db;
-let bucket;
-
-// ============================================
-// CHAT STORAGE (In-memory)
+// CHAT CONFIGURATION (In-memory storage)
 // ============================================
 const users = new Map();
 let messages = [];
 const MAX_MESSAGE_LENGTH = 500;
 const MAX_USERNAME_LENGTH = 30;
 const MAX_MESSAGES_STORED = 1000;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+
+// ============================================
+// FILE UPLOAD CONFIGURATION
+// ============================================
+const MONGODB_URI = process.env.MONGODB_URI;
+const DB_NAME = process.env.DB_NAME || 'videos';
+const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE) || 500 * 1024 * 1024;
+const MAX_VIDEO_SIZE = parseInt(process.env.MAX_VIDEO_SIZE) || 1000 * 1024 * 1024;
+
+let db;
+let bucket;
 
 // ============================================
 // MONGODB CONNECTION
@@ -131,7 +135,22 @@ async function connectToMongoDB() {
 }
 
 // ============================================
-// HELPER FUNCTIONS
+// HELPER FUNCTIONS (Chat)
+// ============================================
+const getOnlineUsers = () => {
+  return Array.from(users.values()).map(user => ({
+    userId: user.userId,
+    username: user.username
+  }));
+};
+
+const broadcastUsers = () => {
+  const onlineUsers = getOnlineUsers();
+  io.emit("users:update", onlineUsers);
+};
+
+// ============================================
+// HELPER FUNCTIONS (File Upload)
 // ============================================
 function generateUniqueFilename(originalName) {
   const timestamp = Date.now();
@@ -160,78 +179,6 @@ function extractFileId(idWithExtension) {
   }
   return cleanId;
 }
-
-function getOnlineUsers() {
-  return Array.from(users.values()).map(user => ({
-    userId: user.userId,
-    username: user.username
-  }));
-}
-
-function broadcastUsers() {
-  const onlineUsers = getOnlineUsers();
-  io.emit("users:update", onlineUsers);
-}
-
-// ============================================
-// ADMIN AUTHENTICATION
-// ============================================
-const authenticateAdmin = (req, res, next) => {
-  const providedPassword = req.headers['x-admin-password'] || req.query.adminPassword;
-  
-  if (!providedPassword) {
-    return res.status(401).json({
-      success: false,
-      message: "Admin password required"
-    });
-  }
-
-  if (providedPassword === ADMIN_PASSWORD) {
-    next();
-  } else {
-    res.status(403).json({
-      success: false,
-      message: "Invalid admin password"
-    });
-  }
-};
-
-// User authentication for deleting their own messages
-const authenticateUser = (req, res, next) => {
-  const userId = req.headers['x-user-id'];
-  const messageId = req.params.id;
-  
-  if (!userId) {
-    return res.status(401).json({
-      success: false,
-      message: "User ID required"
-    });
-  }
-  
-  const message = messages.find(m => m.id === messageId);
-  if (!message) {
-    return res.status(404).json({
-      success: false,
-      message: "Message not found"
-    });
-  }
-  
-  if (message.userId !== userId) {
-    return res.status(403).json({
-      success: false,
-      message: "You can only delete your own messages"
-    });
-  }
-  
-  if (!users.has(userId)) {
-    return res.status(401).json({
-      success: false,
-      message: "User not found or disconnected"
-    });
-  }
-  
-  next();
-};
 
 // ============================================
 // MULTER CONFIGURATION
@@ -270,10 +217,68 @@ const upload = multer({
 });
 
 // ============================================
-// REST API ENDPOINTS
+// ADMIN AUTHENTICATION MIDDLEWARE
 // ============================================
+const authenticateAdmin = (req, res, next) => {
+  const providedPassword = req.headers['x-admin-password'] || req.query.adminPassword;
+  
+  if (!providedPassword) {
+    return res.status(401).json({
+      success: false,
+      message: "Admin password required"
+    });
+  }
 
-// ----- Chat API -----
+  if (providedPassword === ADMIN_PASSWORD) {
+    next();
+  } else {
+    res.status(403).json({
+      success: false,
+      message: "Invalid admin password"
+    });
+  }
+};
+
+// User authentication middleware for deleting their own messages
+const authenticateUser = (req, res, next) => {
+  const userId = req.headers['x-user-id'];
+  const messageId = req.params.id;
+  
+  if (!userId) {
+    return res.status(401).json({
+      success: false,
+      message: "User ID required"
+    });
+  }
+  
+  const message = messages.find(m => m.id === messageId);
+  if (!message) {
+    return res.status(404).json({
+      success: false,
+      message: "Message not found"
+    });
+  }
+  
+  if (message.userId !== userId) {
+    return res.status(403).json({
+      success: false,
+      message: "You can only delete your own messages"
+    });
+  }
+  
+  if (!users.has(userId)) {
+    return res.status(401).json({
+      success: false,
+      message: "User not found or disconnected"
+    });
+  }
+  
+  next();
+};
+
+// ============================================
+// CHAT API ROUTES
+// ============================================
 app.get("/api", (req, res) => {
   res.json({
     success: true,
@@ -339,7 +344,6 @@ app.get("/api/messages/:id", (req, res) => {
   });
 });
 
-// Delete a message - Users can delete their own messages
 app.delete("/api/messages/:id", authenticateUser, (req, res) => {
   const messageId = req.params.id;
   const userId = req.headers['x-user-id'];
@@ -370,7 +374,6 @@ app.delete("/api/messages/:id", authenticateUser, (req, res) => {
   });
 });
 
-// Admin protected routes
 app.delete("/api/messages/all", authenticateAdmin, (req, res) => {
   const deletedCount = messages.length;
   messages = [];
@@ -440,381 +443,430 @@ app.delete("/api/messages/old/:hours", authenticateAdmin, (req, res) => {
   });
 });
 
-// ----- File Management API (if MongoDB is connected) -----
-if (db) {
-  // GET ALL FILES
-  app.get('/files', async (req, res) => {
-    try {
-      const files = await db.collection('uploads.files')
-        .find({})
-        .sort({ uploadDate: -1 })
-        .toArray();
+// ============================================
+// FILE UPLOAD API ROUTES
+// ============================================
+// Check if MongoDB is connected
+const isMongoConnected = () => db && bucket;
 
-      const fileList = files.map(file => ({
-        id: file._id.toString(),
-        filename: file.metadata?.originalName || file.filename,
-        uniqueFilename: file.filename,
-        contentType: file.contentType || 'application/octet-stream',
-        fileSize: file.length,
-        fileSizeFormatted: formatFileSize(file.length),
-        uploadDate: file.uploadDate,
-        uploadDateFormatted: new Date(file.uploadDate).toLocaleString(),
-        url: `/file/${file._id.toString()}`,
-        streamingUrl: file.contentType?.startsWith('video/') ? `/stream/${file._id.toString()}` : null,
-        isVideo: file.contentType?.startsWith('video/') || false,
-        metadata: file.metadata || {}
-      }));
-
-      res.json({
+// GET ALL FILES
+app.get('/files', async (req, res) => {
+  try {
+    if (!isMongoConnected()) {
+      return res.json({
         success: true,
-        files: fileList,
-        total: fileList.length
-      });
-
-    } catch (error) {
-      console.error('File listing error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error retrieving file list'
+        files: [],
+        total: 0,
+        message: 'MongoDB not connected. Please check your connection string.'
       });
     }
-  });
 
-  // UPLOAD FILE
-  app.post('/upload', (req, res) => {
-    upload.single('file')(req, res, async (err) => {
-      if (err) {
-        console.error('Upload error:', err);
-        return res.status(400).json({
+    const files = await db.collection('uploads.files')
+      .find({})
+      .sort({ uploadDate: -1 })
+      .toArray();
+
+    const fileList = files.map(file => ({
+      id: file._id.toString(),
+      filename: file.metadata?.originalName || file.filename,
+      uniqueFilename: file.filename,
+      contentType: file.contentType || 'application/octet-stream',
+      fileSize: file.length,
+      fileSizeFormatted: formatFileSize(file.length),
+      uploadDate: file.uploadDate,
+      uploadDateFormatted: new Date(file.uploadDate).toLocaleString(),
+      url: `/file/${file._id.toString()}`,
+      streamingUrl: file.contentType?.startsWith('video/') ? `/stream/${file._id.toString()}` : null,
+      isVideo: file.contentType?.startsWith('video/') || false,
+      metadata: file.metadata || {}
+    }));
+
+    res.json({
+      success: true,
+      files: fileList,
+      total: fileList.length
+    });
+
+  } catch (error) {
+    console.error('File listing error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error retrieving file list: ' + error.message,
+      files: [],
+      total: 0
+    });
+  }
+});
+
+// UPLOAD FILE
+app.post('/upload', (req, res) => {
+  upload.single('file')(req, res, async (err) => {
+    if (err) {
+      console.error('Upload error:', err);
+      return res.status(400).json({
+        success: false,
+        message: err.message || 'File upload failed'
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No file uploaded'
+      });
+    }
+
+    try {
+      if (!isMongoConnected()) {
+        return res.status(503).json({
           success: false,
-          message: err.message || 'File upload failed'
+          message: 'MongoDB not connected. Please check your connection.'
         });
       }
 
-      if (!req.file) {
-        return res.status(400).json({
-          success: false,
-          message: 'No file uploaded'
-        });
-      }
+      const file = req.file;
+      const uniqueFilename = generateUniqueFilename(file.originalname);
+      const isVideo = file.mimetype.startsWith('video/');
+      
+      const metadata = {
+        originalName: file.originalname,
+        uniqueName: uniqueFilename,
+        uploadDate: new Date(),
+        isVideo: isVideo,
+        fileSize: file.size,
+        contentType: file.mimetype,
+        database: DB_NAME,
+        title: req.body.title || file.originalname
+      };
 
-      try {
-        const file = req.file;
-        const uniqueFilename = generateUniqueFilename(file.originalname);
-        const isVideo = file.mimetype.startsWith('video/');
-        
-        const metadata = {
-          originalName: file.originalname,
-          uniqueName: uniqueFilename,
-          uploadDate: new Date(),
-          isVideo: isVideo,
+      const uploadStream = bucket.openUploadStream(uniqueFilename, {
+        contentType: file.mimetype,
+        metadata: metadata
+      });
+
+      uploadStream.write(file.buffer);
+      uploadStream.end();
+
+      uploadStream.on('finish', () => {
+        res.json({
+          success: true,
+          message: 'File uploaded successfully',
+          fileId: uploadStream.id.toString(),
+          filename: file.originalname,
+          contentType: file.mimetype,
           fileSize: file.size,
-          contentType: file.mimetype,
-          database: DB_NAME,
-          title: req.body.title || file.originalname
-        };
-
-        const uploadStream = bucket.openUploadStream(uniqueFilename, {
-          contentType: file.mimetype,
-          metadata: metadata
+          fileUrl: `/file/${uploadStream.id.toString()}`,
+          streamingUrl: isVideo ? `/stream/${uploadStream.id.toString()}` : null
         });
+      });
 
-        uploadStream.write(file.buffer);
-        uploadStream.end();
-
-        uploadStream.on('finish', () => {
-          res.json({
-            success: true,
-            message: 'File uploaded successfully',
-            fileId: uploadStream.id.toString(),
-            filename: file.originalname,
-            contentType: file.mimetype,
-            fileSize: file.size,
-            fileUrl: `/file/${uploadStream.id.toString()}`,
-            streamingUrl: isVideo ? `/stream/${uploadStream.id.toString()}` : null
-          });
-        });
-
-        uploadStream.on('error', (error) => {
-          console.error('GridFS upload error:', error);
-          res.status(500).json({
-            success: false,
-            message: 'Error uploading file to database'
-          });
-        });
-
-      } catch (error) {
-        console.error('Upload error:', error);
+      uploadStream.on('error', (error) => {
+        console.error('GridFS upload error:', error);
         res.status(500).json({
           success: false,
-          message: 'Internal server error during upload'
+          message: 'Error uploading file to database'
         });
-      }
-    });
-  });
-
-  // STREAM VIDEO
-  app.get('/stream/:id', async (req, res) => {
-    try {
-      let fileId = req.params.id;
-      const cleanId = extractFileId(fileId);
-      
-      if (!ObjectId.isValid(cleanId)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid file ID format'
-        });
-      }
-
-      const id = new ObjectId(cleanId);
-      const files = await db.collection('uploads.files').find({ _id: id }).toArray();
-      
-      if (files.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: 'File not found'
-        });
-      }
-
-      const file = files[0];
-      
-      if (!file.contentType || !file.contentType.startsWith('video/')) {
-        return res.status(400).json({
-          success: false,
-          message: 'This endpoint only supports video files'
-        });
-      }
-
-      const fileSize = file.length;
-      const range = req.headers.range;
-
-      if (range) {
-        const parts = range.replace(/bytes=/, '').split('-');
-        const start = parseInt(parts[0], 10);
-        const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
-        const chunksize = (end - start) + 1;
-        
-        res.writeHead(206, {
-          'Content-Range': `bytes ${start}-${end}/${fileSize}`,
-          'Accept-Ranges': 'bytes',
-          'Content-Length': chunksize,
-          'Content-Type': file.contentType,
-          'Cache-Control': 'public, max-age=31557600'
-        });
-        
-        const downloadStream = bucket.openDownloadStream(id, {
-          start: start,
-          end: end + 1
-        });
-        
-        downloadStream.pipe(res);
-        
-        downloadStream.on('error', (error) => {
-          console.error('Stream error:', error);
-          if (!res.headersSent) {
-            res.status(500).json({
-              success: false,
-              message: 'Error streaming video'
-            });
-          }
-        });
-        
-      } else {
-        res.writeHead(200, {
-          'Content-Length': fileSize,
-          'Content-Type': file.contentType,
-          'Accept-Ranges': 'bytes',
-          'Cache-Control': 'public, max-age=31557600'
-        });
-        
-        const downloadStream = bucket.openDownloadStream(id);
-        downloadStream.pipe(res);
-        
-        downloadStream.on('error', (error) => {
-          console.error('Stream error:', error);
-          if (!res.headersSent) {
-            res.status(500).json({
-              success: false,
-              message: 'Error streaming video'
-            });
-          }
-        });
-      }
+      });
 
     } catch (error) {
-      console.error('Stream error:', error);
+      console.error('Upload error:', error);
       res.status(500).json({
         success: false,
-        message: 'Internal server error'
+        message: 'Internal server error during upload'
       });
     }
   });
+});
 
-  // GET FILE
-  app.get('/file/:id', async (req, res) => {
-    try {
-      let fileId = req.params.id;
-      const cleanId = extractFileId(fileId);
+// STREAM VIDEO
+app.get('/stream/:id', async (req, res) => {
+  try {
+    if (!isMongoConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'MongoDB not connected'
+      });
+    }
+
+    let fileId = req.params.id;
+    const cleanId = extractFileId(fileId);
+    
+    if (!ObjectId.isValid(cleanId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid file ID format'
+      });
+    }
+
+    const id = new ObjectId(cleanId);
+    const files = await db.collection('uploads.files').find({ _id: id }).toArray();
+    
+    if (files.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'File not found'
+      });
+    }
+
+    const file = files[0];
+    
+    if (!file.contentType || !file.contentType.startsWith('video/')) {
+      return res.status(400).json({
+        success: false,
+        message: 'This endpoint only supports video files'
+      });
+    }
+
+    const fileSize = file.length;
+    const range = req.headers.range;
+
+    if (range) {
+      const parts = range.replace(/bytes=/, '').split('-');
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+      const chunksize = (end - start) + 1;
       
-      if (!ObjectId.isValid(cleanId)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid file ID format'
-        });
-      }
-
-      const id = new ObjectId(cleanId);
-      const files = await db.collection('uploads.files').find({ _id: id }).toArray();
-      
-      if (files.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: 'File not found'
-        });
-      }
-
-      const file = files[0];
-      const isVideo = file.contentType && file.contentType.startsWith('video/');
-      
-      if (isVideo && req.query.stream !== 'false') {
-        return res.redirect(`/stream/${cleanId}`);
-      }
-
-      res.set({
-        'Content-Type': file.contentType || 'application/octet-stream',
-        'Content-Disposition': `attachment; filename="${file.metadata?.originalName || file.filename}"`,
-        'Content-Length': file.length,
+      res.writeHead(206, {
+        'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+        'Accept-Ranges': 'bytes',
+        'Content-Length': chunksize,
+        'Content-Type': file.contentType,
         'Cache-Control': 'public, max-age=31557600'
       });
-
-      const downloadStream = bucket.openDownloadStream(id);
+      
+      const downloadStream = bucket.openDownloadStream(id, {
+        start: start,
+        end: end + 1
+      });
+      
       downloadStream.pipe(res);
-
+      
       downloadStream.on('error', (error) => {
-        console.error('Download error:', error);
+        console.error('Stream error:', error);
         if (!res.headersSent) {
           res.status(500).json({
             success: false,
-            message: 'Error streaming file'
+            message: 'Error streaming video'
           });
         }
       });
-
-    } catch (error) {
-      console.error('File retrieval error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error'
-      });
-    }
-  });
-
-  // RENAME FILE (PATCH)
-  app.patch('/file/:id', async (req, res) => {
-    try {
-      const fileId = req.params.id;
-      const { filename } = req.body;
-
-      if (!filename || !filename.trim()) {
-        return res.status(400).json({
-          success: false,
-          message: 'Filename is required'
-        });
-      }
-
-      if (!ObjectId.isValid(fileId)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid file ID format'
-        });
-      }
-
-      const id = new ObjectId(fileId);
       
-      const files = await db.collection('uploads.files').find({ _id: id }).toArray();
-      if (files.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: 'File not found'
-        });
-      }
-
-      const result = await db.collection('uploads.files').updateOne(
-        { _id: id },
-        { 
-          $set: { 
-            'metadata.originalName': filename.trim(),
-            'metadata.lastModified': new Date()
-          } 
-        }
-      );
-
-      if (result.modifiedCount === 0) {
-        return res.status(500).json({
-          success: false,
-          message: 'Failed to rename file'
-        });
-      }
-
-      res.json({
-        success: true,
-        message: 'File renamed successfully',
-        fileId: fileId,
-        newFilename: filename.trim()
+    } else {
+      res.writeHead(200, {
+        'Content-Length': fileSize,
+        'Content-Type': file.contentType,
+        'Accept-Ranges': 'bytes',
+        'Cache-Control': 'public, max-age=31557600'
       });
-
-    } catch (error) {
-      console.error('Rename error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error renaming file: ' + error.message
-      });
-    }
-  });
-
-  // DELETE FILE
-  app.delete('/file/:id', async (req, res) => {
-    try {
-      const fileId = req.params.id;
       
-      if (!ObjectId.isValid(fileId)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid file ID format'
-        });
-      }
-
-      const id = new ObjectId(fileId);
+      const downloadStream = bucket.openDownloadStream(id);
+      downloadStream.pipe(res);
       
-      const files = await db.collection('uploads.files').find({ _id: id }).toArray();
-      if (files.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: 'File not found'
-        });
-      }
-
-      const file = files[0];
-      await bucket.delete(id);
-
-      res.json({
-        success: true,
-        message: 'File deleted successfully',
-        deletedFile: {
-          id: file._id.toString(),
-          filename: file.metadata?.originalName || file.filename
+      downloadStream.on('error', (error) => {
+        console.error('Stream error:', error);
+        if (!res.headersSent) {
+          res.status(500).json({
+            success: false,
+            message: 'Error streaming video'
+          });
         }
       });
+    }
 
-    } catch (error) {
-      console.error('Delete error:', error);
-      res.status(500).json({
+  } catch (error) {
+    console.error('Stream error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
+// GET FILE
+app.get('/file/:id', async (req, res) => {
+  try {
+    if (!isMongoConnected()) {
+      return res.status(503).json({
         success: false,
-        message: 'Error deleting file: ' + error.message
+        message: 'MongoDB not connected'
       });
     }
-  });
-}
+
+    let fileId = req.params.id;
+    const cleanId = extractFileId(fileId);
+    
+    if (!ObjectId.isValid(cleanId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid file ID format'
+      });
+    }
+
+    const id = new ObjectId(cleanId);
+    const files = await db.collection('uploads.files').find({ _id: id }).toArray();
+    
+    if (files.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'File not found'
+      });
+    }
+
+    const file = files[0];
+    const isVideo = file.contentType && file.contentType.startsWith('video/');
+    
+    if (isVideo && req.query.stream !== 'false') {
+      return res.redirect(`/stream/${cleanId}`);
+    }
+
+    res.set({
+      'Content-Type': file.contentType || 'application/octet-stream',
+      'Content-Disposition': `attachment; filename="${file.metadata?.originalName || file.filename}"`,
+      'Content-Length': file.length,
+      'Cache-Control': 'public, max-age=31557600'
+    });
+
+    const downloadStream = bucket.openDownloadStream(id);
+    downloadStream.pipe(res);
+
+    downloadStream.on('error', (error) => {
+      console.error('Download error:', error);
+      if (!res.headersSent) {
+        res.status(500).json({
+          success: false,
+          message: 'Error streaming file'
+        });
+      }
+    });
+
+  } catch (error) {
+    console.error('File retrieval error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
+// RENAME FILE (PATCH)
+app.patch('/file/:id', async (req, res) => {
+  try {
+    if (!isMongoConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'MongoDB not connected'
+      });
+    }
+
+    const fileId = req.params.id;
+    const { filename } = req.body;
+
+    if (!filename || !filename.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Filename is required'
+      });
+    }
+
+    if (!ObjectId.isValid(fileId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid file ID format'
+      });
+    }
+
+    const id = new ObjectId(fileId);
+    
+    const files = await db.collection('uploads.files').find({ _id: id }).toArray();
+    if (files.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'File not found'
+      });
+    }
+
+    const result = await db.collection('uploads.files').updateOne(
+      { _id: id },
+      { 
+        $set: { 
+          'metadata.originalName': filename.trim(),
+          'metadata.lastModified': new Date()
+        } 
+      }
+    );
+
+    if (result.modifiedCount === 0) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to rename file'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'File renamed successfully',
+      fileId: fileId,
+      newFilename: filename.trim()
+    });
+
+  } catch (error) {
+    console.error('Rename error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error renaming file: ' + error.message
+    });
+  }
+});
+
+// DELETE FILE
+app.delete('/file/:id', async (req, res) => {
+  try {
+    if (!isMongoConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'MongoDB not connected'
+      });
+    }
+
+    const fileId = req.params.id;
+    
+    if (!ObjectId.isValid(fileId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid file ID format'
+      });
+    }
+
+    const id = new ObjectId(fileId);
+    
+    const files = await db.collection('uploads.files').find({ _id: id }).toArray();
+    if (files.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'File not found'
+      });
+    }
+
+    const file = files[0];
+    await bucket.delete(id);
+
+    res.json({
+      success: true,
+      message: 'File deleted successfully',
+      deletedFile: {
+        id: file._id.toString(),
+        filename: file.metadata?.originalName || file.filename
+      }
+    });
+
+  } catch (error) {
+    console.error('Delete error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting file: ' + error.message
+    });
+  }
+});
 
 // ============================================
 // SOCKET.IO LOGIC
@@ -974,6 +1026,24 @@ io.on("connection", (socket) => {
 });
 
 // ============================================
+// ERROR HANDLING
+// ============================================
+server.on("error", (error) => {
+  console.error("Server error:", error);
+});
+
+// Graceful shutdown
+process.on("SIGINT", () => {
+  console.log("\nShutting down server...");
+  io.close(() => {
+    server.close(() => {
+      console.log("Server closed");
+      process.exit(0);
+    });
+  });
+});
+
+// ============================================
 // START SERVER
 // ============================================
 async function startServer() {
@@ -982,13 +1052,18 @@ async function startServer() {
   const PORT = process.env.PORT || 3000;
   server.listen(PORT, () => {
     console.log(`\n🚀 Server running on port ${PORT}`);
-    console.log(`📁 Database: ${DB_NAME}`);
+    console.log(`📁 Database: ${DB_NAME || 'videos'}`);
     console.log(`🔑 Admin password: ${ADMIN_PASSWORD}`);
     console.log('\n📌 Pages:');
     console.log(`   🏠 Main Player: http://localhost:${PORT}/`);
     console.log(`   💬 Chat: http://localhost:${PORT}/chat.html`);
     console.log(`   🛠️ Admin: http://localhost:${PORT}/admin.html`);
     console.log(`   📁 File Manager: http://localhost:${PORT}/rename.html`);
+    console.log('\n📌 API Endpoints:');
+    console.log(`   🗣️ Chat API: /api/messages`);
+    console.log(`   📁 File API: /files`);
+    console.log(`   📤 Upload: /upload`);
+    console.log(`   🎬 Stream: /stream/:id`);
   });
 }
 
