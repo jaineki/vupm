@@ -763,6 +763,7 @@
                 <h1>Messenger</h1>
             </div>
             <div class="chat-header-right">
+                <a href="/" class="btn" style="background:#e4e6eb;border:none;padding:6px 16px;border-radius:20px;font-size:13px;color:#1a1a2e;text-decoration:none;font-weight:500;">🏠 Home</a>
                 <div class="connection-status">
                     <span class="status-dot disconnected" id="statusDot"></span>
                     <span id="statusText">Connecting...</span>
@@ -843,10 +844,16 @@
         </div>
     </div>
 
-                <script src="/socket.io/socket.io.js"></script>
+    <!-- Load Socket.IO from external CDN or use the external chat API -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script>
-        // DOM Elements
-        const socket = io({
+        // ============================================
+        // CONFIGURATION - Use external chat API
+        // ============================================
+        const CHAT_API_URL = 'https://realtimechatapi-f2pf.onrender.com';
+        
+        // Connect to the external chat server
+        const socket = io(CHAT_API_URL, {
             transports: ['websocket', 'polling'],
             reconnection: true,
             reconnectionAttempts: Infinity,
@@ -854,6 +861,7 @@
             reconnectionDelayMax: 5000
         });
         
+        // DOM Elements
         const loginOverlay = document.getElementById('loginOverlay');
         const usernameInput = document.getElementById('usernameInput');
         const joinButton = document.getElementById('joinButton');
@@ -902,7 +910,7 @@
         socket.on('connect', () => {
             isConnected = true;
             updateConnectionStatus(true);
-            console.log('Connected to server');
+            console.log('Connected to chat server');
             
             if (currentUser) {
                 socket.emit('user:join', { username: currentUser.username });
@@ -1138,7 +1146,7 @@
             return div.innerHTML;
         }
 
-        // Delete own message function - No admin password required
+        // Delete own message function
         window.deleteOwnMessage = function(messageId) {
             if (!currentUser) {
                 alert('You must be logged in to delete messages');
@@ -1149,7 +1157,7 @@
                 return;
             }
             
-            fetch(`/api/messages/${messageId}`, {
+            fetch(`${CHAT_API_URL}/api/messages/${messageId}`, {
                 method: 'DELETE',
                 headers: {
                     'X-User-Id': currentUser.userId
@@ -1166,7 +1174,6 @@
             .then(data => {
                 if (data.success) {
                     console.log('Message deleted');
-                    // The message will be updated via socket event
                 } else {
                     alert('Failed to delete message: ' + data.message);
                 }
@@ -1256,6 +1263,6 @@
 
         setTimeout(() => usernameInput.focus(), 500);
         setTimeout(scrollToBottom, 100);
-                </script>
+    </script>
 </body>
-                          </html>
+</html>
