@@ -4,11 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
     <title>Jay Video Hub · social player</title>
-    <!-- Google Fonts: Poppins -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-    <!-- Font Awesome 6 (free) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <style>
         /* ---------- RESET & BASE ---------- */
@@ -25,11 +23,6 @@
             display: flex;
             justify-content: center;
             padding: 0.8rem;
-            transition: background 0.3s;
-        }
-        body.light {
-            background: #f0f2f5;
-            color: #1a1a2e;
         }
         #app {
             max-width: 1440px;
@@ -61,9 +54,7 @@
             animation: spin 1s linear infinite;
         }
         @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
+            to { transform: rotate(360deg); }
         }
         #loading-screen p {
             margin-top: 1.2rem;
@@ -72,7 +63,7 @@
             color: #aaa;
         }
 
-        /* ---------- GLASS & SHARED ---------- */
+        /* ---------- GLASS ---------- */
         .glass {
             background: rgba(255, 255, 255, 0.06);
             backdrop-filter: blur(8px);
@@ -80,11 +71,6 @@
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 24px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-        }
-        body.light .glass {
-            background: rgba(255, 255, 255, 0.5);
-            border-color: rgba(0, 0, 0, 0.08);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
         }
         .hidden {
             display: none !important;
@@ -102,9 +88,6 @@
             background: rgba(20, 20, 30, 0.7);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.06);
-        }
-        body.light .glass-header {
-            background: rgba(255, 255, 255, 0.6);
         }
         .logo {
             font-weight: 700;
@@ -157,11 +140,6 @@
             font-family: 'Poppins', sans-serif;
             font-size: 0.85rem;
             outline: none;
-            transition: 0.2s;
-        }
-        body.light .search-wrapper input {
-            background: rgba(0, 0, 0, 0.06);
-            color: #111;
         }
         .search-wrapper i {
             position: absolute;
@@ -198,9 +176,6 @@
             box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
             width: 100%;
             min-height: 300px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
         .player-wrapper video {
             width: 100%;
@@ -227,7 +202,6 @@
             color: #6c5ce7;
             opacity: 0.5;
         }
-        /* custom controls */
         .custom-controls {
             position: absolute;
             bottom: 0;
@@ -238,12 +212,7 @@
             display: flex;
             flex-direction: column;
             gap: 4px;
-            transition: opacity 0.3s;
             z-index: 10;
-        }
-        .custom-controls.hidden-controls {
-            opacity: 0;
-            pointer-events: none;
         }
         .progress-bar-container {
             display: flex;
@@ -258,7 +227,6 @@
             background: rgba(255, 255, 255, 0.2);
             border-radius: 4px;
             outline: none;
-            transition: 0.2s;
         }
         .progress-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
@@ -268,7 +236,6 @@
             border-radius: 50%;
             background: #6c5ce7;
             cursor: pointer;
-            box-shadow: 0 0 8px #6c5ce7aa;
         }
         .progress-time {
             display: flex;
@@ -291,10 +258,6 @@
             cursor: pointer;
             padding: 4px 6px;
             border-radius: 30px;
-            transition: 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 3px;
             opacity: 0.8;
         }
         .ctrl-btn:hover {
@@ -329,61 +292,6 @@
             font-family: 'Poppins', sans-serif;
             font-size: 0.7rem;
             cursor: pointer;
-        }
-        /* drop overlay */
-        .drop-overlay {
-            position: absolute;
-            inset: 0;
-            background: rgba(108, 92, 231, 0.15);
-            backdrop-filter: blur(4px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.4rem;
-            font-weight: 500;
-            color: #fff;
-            pointer-events: none;
-            opacity: 0;
-            transition: 0.3s;
-            border: 3px dashed #6c5ce7;
-            margin: 16px;
-            border-radius: 30px;
-            z-index: 20;
-        }
-        .player-wrapper.drag-over .drop-overlay {
-            opacity: 1;
-        }
-        /* error message */
-        .video-error {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0, 0, 0, 0.8);
-            color: #ff6b6b;
-            z-index: 5;
-            padding: 2rem;
-            text-align: center;
-        }
-        .video-error i {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-        .video-error .retry-btn {
-            margin-top: 1rem;
-            padding: 0.5rem 2rem;
-            background: #6c5ce7;
-            border: none;
-            border-radius: 30px;
-            color: #fff;
-            cursor: pointer;
-            font-family: 'Poppins', sans-serif;
-            font-size: 0.9rem;
-        }
-        .video-error .retry-btn:hover {
-            background: #7c6cf7;
         }
 
         /* ---------- VIDEO INFO ---------- */
@@ -431,65 +339,6 @@
             display: none;
         }
 
-        /* ---------- COMMENTS ---------- */
-        .comments-section {
-            padding: 1rem 1.4rem;
-            margin-top: 1rem;
-        }
-        .add-comment {
-            display: flex;
-            gap: 8px;
-            margin: 10px 0 14px;
-        }
-        .add-comment input {
-            flex: 1;
-            padding: 8px 14px;
-            border-radius: 40px;
-            border: none;
-            background: rgba(255, 255, 255, 0.06);
-            color: #eee;
-            font-family: 'Poppins', sans-serif;
-            outline: none;
-            font-size: 0.9rem;
-        }
-        body.light .add-comment input {
-            background: rgba(0, 0, 0, 0.06);
-            color: #111;
-        }
-        .add-comment button {
-            background: #6c5ce7;
-            border: none;
-            padding: 0 16px;
-            border-radius: 40px;
-            color: #fff;
-            cursor: pointer;
-        }
-        .comments-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-        .comment-item {
-            background: rgba(255, 255, 255, 0.04);
-            padding: 8px 14px;
-            border-radius: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.85rem;
-            word-break: break-word;
-        }
-        .comment-item button {
-            background: transparent;
-            border: none;
-            color: #ff6b6b;
-            cursor: pointer;
-            flex-shrink: 0;
-            margin-left: 8px;
-        }
-
         /* ---------- PLAYLIST SIDEBAR ---------- */
         .playlist-sidebar {
             padding: 1rem 0.8rem;
@@ -520,14 +369,6 @@
             background: rgba(108, 92, 231, 0.25);
             border-left: 4px solid #6c5ce7;
         }
-        .playlist-item img {
-            width: 64px;
-            height: 44px;
-            object-fit: cover;
-            border-radius: 12px;
-            background: #222;
-            flex-shrink: 0;
-        }
         .playlist-item .pl-info {
             flex: 1;
             min-width: 0;
@@ -542,6 +383,32 @@
         .playlist-item .pl-info .pl-duration {
             font-size: 0.7rem;
             opacity: 0.5;
+        }
+
+        /* ---------- CHAT SECTION ---------- */
+        .chat-iframe-container {
+            width: 100%;
+            height: 500px;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #1a1a2e;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .chat-iframe-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #1a1a2e;
+        }
+        .chat-sidebar {
+            padding: 1rem 0.8rem;
+        }
+        .chat-sidebar h3 {
+            margin-bottom: 0.8rem;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            font-size: 1.1rem;
         }
 
         /* ---------- FOOTER ---------- */
@@ -571,9 +438,6 @@
         .social-icons a:hover {
             opacity: 1;
         }
-        .contact-links a:hover {
-            opacity: 1;
-        }
 
         /* ---------- TOAST ---------- */
         .toast-container {
@@ -592,7 +456,6 @@
             padding: 10px 20px;
             border-radius: 40px;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(6px);
             border-left: 4px solid #6c5ce7;
             animation: slideIn 0.4s ease;
             font-weight: 400;
@@ -609,7 +472,7 @@
             }
         }
 
-        /* scroll */
+        /* ---------- SCROLLBAR ---------- */
         ::-webkit-scrollbar {
             width: 4px;
         }
@@ -618,7 +481,7 @@
             border-radius: 10px;
         }
 
-        /* ---------- MOBILE FIRST ---------- */
+        /* ---------- RESPONSIVE ---------- */
         @media (max-width: 640px) {
             body {
                 padding: 0.4rem;
@@ -648,13 +511,6 @@
                 font-size: 0.85rem;
                 padding: 2px 4px;
             }
-            .ctrl-btn i {
-                font-size: 0.9rem;
-            }
-            .speed-group select {
-                font-size: 0.65rem;
-                padding: 1px 6px;
-            }
             .video-info h2 {
                 font-size: 1.1rem;
             }
@@ -663,19 +519,11 @@
                 font-size: 0.75rem;
                 padding: 4px 10px;
             }
-            .playlist-item img {
-                width: 52px;
-                height: 36px;
-            }
             .playlist-item .pl-info .pl-title {
                 font-size: 0.8rem;
             }
-            .comments-section {
-                padding: 0.8rem 1rem;
-            }
-            .add-comment input {
-                font-size: 0.8rem;
-                padding: 6px 12px;
+            .chat-iframe-container {
+                height: 400px;
             }
             .glass-footer {
                 padding: 0.6rem 1rem;
@@ -686,12 +534,9 @@
                 gap: 0.4rem;
             }
         }
-        @media (max-width: 400px) {
-            .controls-row .ctrl-btn {
-                font-size: 0.75rem;
-            }
-            .volume-group input[type="range"] {
-                width: 32px;
+        @media (max-width: 480px) {
+            .chat-iframe-container {
+                height: 350px;
             }
         }
     </style>
@@ -709,25 +554,22 @@
             <div class="logo"><i class="fas fa-play-circle"></i>Jay Player</div>
             <nav class="nav-menu">
                 <a href="/" class="active">Home</a>
-                <a href="chat.html" class="active">Messenger</a>
+                <a href="/rename.html">Manage Files</a>
+                <a href="/admin.html">Admin</a>
             </nav>
             <div class="search-wrapper"><i class="fas fa-search"></i><input type="text" id="searchInput" placeholder="Search videos..." /></div>
             <div class="user-profile"><i class="fas fa-user-circle"></i></div>
         </header>
 
+        <!-- Main Content -->
         <div class="main-grid">
-            <!-- video section -->
+            <!-- Video Section -->
             <section class="video-section">
                 <div class="player-wrapper" id="playerWrapper">
                     <video id="videoPlayer" preload="metadata" crossorigin="anonymous"></video>
                     <div class="video-placeholder" id="videoPlaceholder">
                         <i class="fas fa-play-circle"></i>
                         <span>Select a video to play</span>
-                    </div>
-                    <div class="video-error hidden" id="videoError">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <span id="errorMessage">Failed to load video</span>
-                        <button class="retry-btn" id="retryBtn">Retry</button>
                     </div>
                     <div class="custom-controls" id="customControls">
                         <div class="progress-bar-container">
@@ -746,11 +588,9 @@
                                 <select id="playbackSpeed"><option value="0.5">0.5x</option><option value="1" selected>1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="2">2x</option></select>
                             </div>
                             <button id="theaterBtn" class="ctrl-btn"><i class="fas fa-expand-alt"></i></button>
-                            <button id="pipBtn" class="ctrl-btn"><i class="fas fa-window-restore"></i></button>
                             <button id="fullscreenBtn" class="ctrl-btn"><i class="fas fa-expand"></i></button>
                         </div>
                     </div>
-                    <div id="dropOverlay" class="drop-overlay">📁 drop video file</div>
                 </div>
 
                 <div class="video-info glass">
@@ -765,21 +605,32 @@
                         <label class="upload-label"><i class="fas fa-upload"></i> Upload<input type="file" id="fileUpload" accept="video/*" /></label>
                     </div>
                 </div>
-
-                <div class="comments-section glass">
-                    <h3>Comments <span id="commentCount">0</span></h3>
-                    <div class="add-comment"><input type="text" id="commentInput" placeholder="Write a comment..." /><button id="addCommentBtn"><i class="fas fa-paper-plane"></i></button></div>
-                    <div id="commentsList" class="comments-list"></div>
-                </div>
             </section>
 
-            <!-- playlist -->
+            <!-- Playlist Sidebar -->
             <aside class="playlist-sidebar glass">
                 <h3><i class="fas fa-list-ul"></i> Playlist</h3>
                 <div id="playlistContainer" class="playlist-container"></div>
             </aside>
         </div>
 
+        <!-- Chat Section - Using the external API -->
+        <div class="main-grid" style="margin-top: 1.2rem;">
+            <div class="chat-sidebar glass" style="grid-column: 1 / -1;">
+                <h3><i class="fas fa-comment-dots"></i> Live Chat</h3>
+                <div class="chat-iframe-container">
+                    <iframe 
+                        src="https://realtimechatapi-f2pf.onrender.com" 
+                        allow="microphone; camera; autoplay; encrypted-media;"
+                        loading="lazy"
+                        title="Messenger Chat"
+                        sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
+                    ></iframe>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
         <footer class="glass-footer">
             <div class="footer-content">
                 <span>© <span id="copyrightYear">2026</span> JayBohol</span>
@@ -799,679 +650,385 @@
     <div id="toastContainer" class="toast-container"></div>
 
     <script>
-        (function() {
-            "use strict";
+        // ============================================
+        // DOM REFS
+        // ============================================
+        const app = document.getElementById('app');
+        const loading = document.getElementById('loading-screen');
+        const video = document.getElementById('videoPlayer');
+        const videoPlaceholder = document.getElementById('videoPlaceholder');
+        const playBtn = document.getElementById('playPauseBtn');
+        const skipBack = document.getElementById('skipBackBtn');
+        const skipForward = document.getElementById('skipForwardBtn');
+        const progressSlider = document.getElementById('progressSlider');
+        const currentTimeSpan = document.getElementById('currentTime');
+        const durationSpan = document.getElementById('totalDuration');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const muteBtn = document.getElementById('muteBtn');
+        const speedSelect = document.getElementById('playbackSpeed');
+        const theaterBtn = document.getElementById('theaterBtn');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const videoTitle = document.getElementById('videoTitle');
+        const viewCount = document.getElementById('viewCount');
+        const uploadDate = document.getElementById('uploadDate');
+        const videoDesc = document.getElementById('videoDesc');
+        const likeBtn = document.getElementById('likeBtn');
+        const likeCount = document.getElementById('likeCount');
+        const dislikeBtn = document.getElementById('dislikeBtn');
+        const dislikeCount = document.getElementById('dislikeCount');
+        const shareBtn = document.getElementById('shareBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const fileUpload = document.getElementById('fileUpload');
+        const searchInput = document.getElementById('searchInput');
+        const playlistContainer = document.getElementById('playlistContainer');
+        const toastContainer = document.getElementById('toastContainer');
+        const playerWrapper = document.getElementById('playerWrapper');
+        const copyrightYear = document.getElementById('copyrightYear');
 
-            // ----- DOM refs -----
-            const app = document.getElementById('app');
-            const loading = document.getElementById('loading-screen');
-            const video = document.getElementById('videoPlayer');
-            const videoPlaceholder = document.getElementById('videoPlaceholder');
-            const videoError = document.getElementById('videoError');
-            const errorMessage = document.getElementById('errorMessage');
-            const retryBtn = document.getElementById('retryBtn');
-            const playBtn = document.getElementById('playPauseBtn');
-            const skipBack = document.getElementById('skipBackBtn');
-            const skipForward = document.getElementById('skipForwardBtn');
-            const progressSlider = document.getElementById('progressSlider');
-            const currentTimeSpan = document.getElementById('currentTime');
-            const durationSpan = document.getElementById('totalDuration');
-            const volumeSlider = document.getElementById('volumeSlider');
-            const muteBtn = document.getElementById('muteBtn');
-            const speedSelect = document.getElementById('playbackSpeed');
-            const theaterBtn = document.getElementById('theaterBtn');
-            const pipBtn = document.getElementById('pipBtn');
-            const fullscreenBtn = document.getElementById('fullscreenBtn');
-            const videoTitle = document.getElementById('videoTitle');
-            const viewCount = document.getElementById('viewCount');
-            const uploadDate = document.getElementById('uploadDate');
-            const videoDesc = document.getElementById('videoDesc');
-            const likeBtn = document.getElementById('likeBtn');
-            const likeCount = document.getElementById('likeCount');
-            const dislikeBtn = document.getElementById('dislikeBtn');
-            const dislikeCount = document.getElementById('dislikeCount');
-            const shareBtn = document.getElementById('shareBtn');
-            const saveBtn = document.getElementById('saveBtn');
-            const fileUpload = document.getElementById('fileUpload');
-            const searchInput = document.getElementById('searchInput');
-            const playlistContainer = document.getElementById('playlistContainer');
-            const commentInput = document.getElementById('commentInput');
-            const addCommentBtn = document.getElementById('addCommentBtn');
-            const commentsList = document.getElementById('commentsList');
-            const commentCountSpan = document.getElementById('commentCount');
-            const toastContainer = document.getElementById('toastContainer');
-            const playerWrapper = document.getElementById('playerWrapper');
-            const copyrightYear = document.getElementById('copyrightYear');
+        // ============================================
+        // CONFIGURATION
+        // ============================================
+        const API_BASE = 'https://jay-so2u.onrender.com';
+        const API_STREAM = `${API_BASE}/stream`;
+        const API_FILES = `${API_BASE}/files`;
 
-            // ----- Dynamic Copyright Year -----
-            copyrightYear.textContent = new Date().getFullYear();
+        let currentVideoIndex = 0;
+        let playlist = [];
 
-            // ----- state -----
-            let currentVideoIndex = 0;
-            let isTheater = false;
+        // ============================================
+        // HELPERS
+        // ============================================
+        function showToast(msg) {
+            const t = document.createElement('div');
+            t.className = 'toast';
+            t.textContent = msg;
+            toastContainer.appendChild(t);
+            setTimeout(() => { t.remove(); }, 3000);
+        }
 
-            // ----- API Base URL -----
-            const API_BASE = 'https://jay-so2u.onrender.com/stream/';
-            const API_BASE_FILE = 'https://jay-so2u.onrender.com/file/';
-            const API_BASE_UPLOAD = 'https://jay-so2u.onrender.com/upload';
-            const API_FILES_LIST = 'https://jay-so2u.onrender.com/files';
+        function formatFileSize(bytes) {
+            if (!bytes) return '';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
 
-            // ----- PLAYLIST -----
-            let playlist = [];
+        function formatTime(seconds) {
+            if (!seconds || isNaN(seconds) || !isFinite(seconds)) return '0:00';
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return `${m}:${s.toString().padStart(2, '0')}`;
+        }
 
-            // ----- Load files from server -----
-            async function loadFilesFromServer() {
-                try {
-                    const response = await fetch(API_FILES_LIST);
-                    if (!response.ok) {
-                        throw new Error('Failed to fetch files');
-                    }
-                    const data = await response.json();
-                    
-                    if (data.success && data.files && data.files.length > 0) {
-                        playlist = data.files.map(file => ({
-                            id: file.id,
-                            title: getVideoTitle(file.filename),
-                            filename: file.filename,
-                            src: API_BASE + file.id + '.mp4',
-                            fileUrl: API_BASE_FILE + file.id + '.mp4',
-                            poster: '',
-                            duration: '0:00',
-                            views: 0,
-                            date: file.uploadDate ? new Date(file.uploadDate).toISOString().slice(0, 10) : 'today',
-                            desc: getVideoDescription(file.filename),
-                            fileSize: file.fileSize || 0
-                        }));
-                        
-                        if (playlist.length > 0) {
-                            loadVideo(0);
-                        }
-                    }
-                    renderPlaylist(searchInput.value);
-                    showToast(`Loaded ${playlist.length} videos`);
-                } catch (error) {
-                    console.error('Error loading files:', error);
-                    showToast('Could not load files from server');
-                }
+        function stringToColor(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = str.charCodeAt(i) + ((hash << 5) - hash);
             }
+            const hue = Math.abs(hash % 360);
+            return `hsl(${hue}, 60%, 25%)`;
+        }
 
-            // ----- Generate video titles from filename -----
-            function getVideoTitle(filename) {
-                let name = filename.replace(/\.[^/.]+$/, '');
-                name = name.replace(/[_-]/g, ' ');
-                name = name.split(' ').map(word => 
-                    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-                ).join(' ');
-                if (name.length < 3 || /^[0-9a-f]{32}$/i.test(name.replace(/\s/g, ''))) {
-                    return 'Video ' + (playlist.length + 1);
-                }
-                return name || 'Untitled Video';
-            }
+        function getVideoTitle(filename) {
+            let name = filename.replace(/\.[^/.]+$/, '');
+            name = name.replace(/[_-]/g, ' ');
+            name = name.split(' ').map(word => 
+                word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+            ).join(' ');
+            return name || 'Untitled Video';
+        }
 
-            function getVideoDescription(filename) {
-                const title = getVideoTitle(filename);
-                return `${title} - A video shared on Jay Video Hub`;
-            }
-
-            // ----- shared backend (simulated with localStorage + broadcast) -----
-            function getSocialData() {
-                try {
-                    return JSON.parse(localStorage.getItem('social_data')) || { comments: [], likes: {}, dislikes: {},
-                        saves: [] };
-                } catch { return { comments: [], likes: {}, dislikes: {}, saves: [] }; }
-            }
-
-            function saveSocialData(data) {
-                localStorage.setItem('social_data', JSON.stringify(data));
-                try {
-                    const bc = new BroadcastChannel('social_channel');
-                    bc.postMessage({ type: 'sync', data });
-                    bc.close();
-                } catch {}
-            }
-
+        // ============================================
+        // LOAD FILES
+        // ============================================
+        async function loadFiles() {
             try {
-                const bc = new BroadcastChannel('social_channel');
-                bc.onmessage = (e) => {
-                    if (e.data && e.data.type === 'sync') {
-                        renderCommentsFromData(e.data.data.comments || []);
-                        updateLikeDislikeFromData(e.data.data);
-                    }
-                };
-            } catch {}
-
-            // ----- helpers -----
-            function formatTime(seconds) {
-                if (!seconds || isNaN(seconds) || !isFinite(seconds)) return '0:00';
-                const m = Math.floor(seconds / 60);
-                const s = Math.floor(seconds % 60);
-                return `${m}:${s.toString().padStart(2, '0')}`;
-            }
-
-            function showToast(msg) {
-                const t = document.createElement('div');
-                t.className = 'toast';
-                t.textContent = msg;
-                toastContainer.appendChild(t);
-                setTimeout(() => { t.remove(); }, 3000);
-            }
-
-            // ----- load video by index -----
-            function loadVideo(index) {
-                if (index < 0 || index >= playlist.length) {
-                    videoPlaceholder.classList.remove('hidden');
-                    video.classList.add('hidden');
-                    videoTitle.textContent = 'No videos available';
-                    videoDesc.textContent = 'Upload a video to get started';
-                    return;
+                const response = await fetch(API_FILES);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch files');
                 }
-                currentVideoIndex = index;
-                const v = playlist[index];
-
-                videoError.classList.add('hidden');
-                videoPlaceholder.classList.add('hidden');
-                video.classList.remove('hidden');
-
-                video.src = v.src;
-                video.poster = v.poster || '';
-                video.load();
-
-                videoTitle.textContent = v.title;
-                viewCount.textContent = v.views + ' views';
-                uploadDate.textContent = v.date || 'today';
-                videoDesc.textContent = v.desc || 'no description';
-
-                document.querySelectorAll('.playlist-item').forEach((el, i) => {
-                    el.classList.toggle('active', i === index);
-                });
-
-                const data = getSocialData();
-                const likes = data.likes || {};
-                const dislikes = data.dislikes || {};
-                likeCount.textContent = likes[v.id] || 0;
-                dislikeCount.textContent = dislikes[v.id] || 0;
-
-                const saves = data.saves || [];
-                const isSaved = saves.includes(v.id);
-                saveBtn.querySelector('i').className = isSaved ? 'fas fa-bookmark' : 'far fa-bookmark';
-
-                if (v.duration && v.duration !== '0:00') {
-                    durationSpan.textContent = v.duration;
-                } else {
-                    durationSpan.textContent = '0:00';
-                }
-            }
-
-            // ----- render playlist -----
-            function renderPlaylist(filter = '') {
-                const filtered = playlist.filter(v => v.title.toLowerCase().includes(filter.toLowerCase()));
-                playlistContainer.innerHTML = '';
-                if (filtered.length === 0) {
-                    playlistContainer.innerHTML = `
-                        <div style="text-align:center;padding:20px;color:#666;font-size:0.9rem;">
-                            <i class="fas fa-video" style="font-size:2rem;display:block;margin-bottom:10px;"></i>
-                            ${playlist.length === 0 ? 'No videos uploaded yet.<br>Click Upload to add videos!' : 'No matching videos'}
-                        </div>
-                    `;
-                    return;
-                }
-                filtered.forEach((v, idx) => {
-                    const originalIdx = playlist.indexOf(v);
-                    const div = document.createElement('div');
-                    div.className = 'playlist-item' + (originalIdx === currentVideoIndex ? ' active' : '');
-                    const color = stringToColor(v.title);
-                    div.innerHTML = `
-                        <div style="width:64px;height:44px;border-radius:12px;background:${color};display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;">
-                            <i class="fas fa-play" style="color:rgba(255,255,255,0.7);"></i>
-                        </div>
-                        <div class="pl-info"><div class="pl-title">${v.title}</div><div class="pl-duration">${v.duration || '0:00'} ${v.fileSize ? '· ' + formatFileSize(v.fileSize) : ''}</div></div>
-                    `;
-                    div.addEventListener('click', () => { loadVideo(originalIdx); });
-                    playlistContainer.appendChild(div);
-                });
-            }
-
-            function stringToColor(str) {
-                let hash = 0;
-                for (let i = 0; i < str.length; i++) {
-                    hash = str.charCodeAt(i) + ((hash << 5) - hash);
-                }
-                const hue = Math.abs(hash % 360);
-                return `hsl(${hue}, 60%, 25%)`;
-            }
-
-            function formatFileSize(bytes) {
-                if (!bytes) return '';
-                const k = 1024;
-                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-                const i = Math.floor(Math.log(bytes) / Math.log(k));
-                return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-            }
-
-            // ----- comments -----
-            function renderCommentsFromData(commentsArray) {
-                commentsList.innerHTML = '';
-                commentsArray.forEach((c, i) => {
-                    const div = document.createElement('div');
-                    div.className = 'comment-item';
-                    div.innerHTML =
-                        `<span>${c.text}</span><button data-idx="${i}"><i class="fas fa-trash-alt"></i></button>`;
-                    div.querySelector('button').addEventListener('click', (e) => {
-                        const idx = parseInt(e.currentTarget.dataset.idx);
-                        const data = getSocialData();
-                        data.comments.splice(idx, 1);
-                        saveSocialData(data);
-                        renderCommentsFromData(data.comments);
-                        updateCommentCount(data.comments.length);
-                        showToast('comment deleted');
-                    });
-                    commentsList.appendChild(div);
-                });
-                updateCommentCount(commentsArray.length);
-            }
-
-            function renderComments() {
-                const data = getSocialData();
-                renderCommentsFromData(data.comments || []);
-            }
-
-            function updateCommentCount(count) {
-                commentCountSpan.textContent = count || 0;
-            }
-
-            function addComment(text) {
-                if (!text.trim()) return;
-                const data = getSocialData();
-                data.comments.push({ text: text.trim(), time: Date.now() });
-                saveSocialData(data);
-                renderCommentsFromData(data.comments);
-                showToast('comment added');
-                commentInput.value = '';
-            }
-
-            // ----- likes / dislikes / saves -----
-            function updateLikeDislikeFromData(data) {
-                const v = playlist[currentVideoIndex];
-                if (!v) return;
-                const likes = data.likes || {};
-                const dislikes = data.dislikes || {};
-                likeCount.textContent = likes[v.id] || 0;
-                dislikeCount.textContent = dislikes[v.id] || 0;
-                const saves = data.saves || [];
-                const isSaved = saves.includes(v.id);
-                saveBtn.querySelector('i').className = isSaved ? 'fas fa-bookmark' : 'far fa-bookmark';
-            }
-
-            function handleLike() {
-                const v = playlist[currentVideoIndex];
-                if (!v) return;
-                const data = getSocialData();
-                data.likes = data.likes || {};
-                data.likes[v.id] = (data.likes[v.id] || 0) + 1;
-                saveSocialData(data);
-                likeCount.textContent = data.likes[v.id];
-                showToast('liked');
-            }
-
-            function handleDislike() {
-                const v = playlist[currentVideoIndex];
-                if (!v) return;
-                const data = getSocialData();
-                data.dislikes = data.dislikes || {};
-                data.dislikes[v.id] = (data.dislikes[v.id] || 0) + 1;
-                saveSocialData(data);
-                dislikeCount.textContent = data.dislikes[v.id];
-                showToast('disliked');
-            }
-
-            function handleSave() {
-                const v = playlist[currentVideoIndex];
-                if (!v) return;
-                const data = getSocialData();
-                data.saves = data.saves || [];
-                const idx = data.saves.indexOf(v.id);
-                if (idx > -1) {
-                    data.saves.splice(idx, 1);
-                    saveBtn.querySelector('i').className = 'far fa-bookmark';
-                    showToast('removed from saved');
-                } else {
-                    data.saves.push(v.id);
-                    saveBtn.querySelector('i').className = 'fas fa-bookmark';
-                    showToast('saved');
-                }
-                saveSocialData(data);
-            }
-
-            // ----- UPLOAD video to server -----
-            async function uploadVideoToServer(file) {
-                try {
-                    const formData = new FormData();
-                    formData.append('file', file);
-
-                    showToast('Uploading...');
+                const data = await response.json();
+                
+                if (data.success && data.files) {
+                    playlist = data.files.map(file => ({
+                        id: file.id,
+                        title: getVideoTitle(file.filename),
+                        filename: file.filename,
+                        src: `${API_STREAM}/${file.id}.mp4`,
+                        duration: '0:00',
+                        views: 0,
+                        date: file.uploadDate ? new Date(file.uploadDate).toISOString().slice(0, 10) : 'today',
+                        desc: `Video: ${file.filename}`,
+                        fileSize: file.fileSize || 0
+                    }));
                     
-                    const response = await fetch(API_BASE_UPLOAD, {
-                        method: 'POST',
-                        body: formData
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`Upload failed: ${response.status}`);
+                    if (playlist.length > 0) {
+                        loadVideo(0);
                     }
-
-                    const data = await response.json();
-                    
-                    if (data.success) {
-                        showToast('Upload successful!');
-                        
-                        const newVideo = {
-                            id: data.fileId,
-                            title: file.name.replace(/\.[^/.]+$/, ''),
-                            filename: file.name,
-                            src: API_BASE + data.fileId + '.mp4',
-                            fileUrl: API_BASE_FILE + data.fileId + '.mp4',
-                            poster: '',
-                            duration: '0:00',
-                            views: 0,
-                            date: new Date().toISOString().slice(0, 10),
-                            desc: 'uploaded video',
-                            fileSize: file.size
-                        };
-                        playlist.push(newVideo);
-                        renderPlaylist(searchInput.value);
-                        loadVideo(playlist.length - 1);
-                        return true;
-                    } else {
-                        showToast('Upload failed: ' + (data.message || 'Unknown error'));
-                        return false;
-                    }
-                } catch (error) {
-                    console.error('Upload error:', error);
-                    showToast('Upload error: ' + error.message);
-                    return false;
+                    renderPlaylist();
+                    showToast(`Loaded ${playlist.length} videos`);
                 }
+            } catch (error) {
+                console.error('Error loading files:', error);
+                showToast('Could not load files from server');
             }
+        }
 
-            // ----- video controls -----
-            function togglePlay() {
-                if (video.paused) {
-                    video.play().catch(e => {
-                        showToast('Error playing video');
-                        console.error('Play error:', e);
-                    });
-                } else {
-                    video.pause();
-                }
+        // ============================================
+        // VIDEO FUNCTIONS
+        // ============================================
+        function loadVideo(index) {
+            if (index < 0 || index >= playlist.length) {
+                videoPlaceholder.classList.remove('hidden');
+                video.classList.add('hidden');
+                videoTitle.textContent = 'No videos available';
+                videoDesc.textContent = 'Upload a video to get started';
+                return;
             }
+            currentVideoIndex = index;
+            const v = playlist[index];
 
-            function updatePlayButton() {
-                const icon = playBtn.querySelector('i');
-                if (video.paused) {
-                    icon.className = 'fas fa-play';
-                } else {
-                    icon.className = 'fas fa-pause';
-                }
+            videoPlaceholder.classList.add('hidden');
+            video.classList.remove('hidden');
+
+            video.src = v.src;
+            video.load();
+
+            videoTitle.textContent = v.title;
+            viewCount.textContent = v.views + ' views';
+            uploadDate.textContent = v.date || 'today';
+            videoDesc.textContent = v.desc || 'no description';
+
+            document.querySelectorAll('.playlist-item').forEach((el, i) => {
+                el.classList.toggle('active', i === index);
+            });
+
+            if (v.duration && v.duration !== '0:00') {
+                durationSpan.textContent = v.duration;
+            } else {
+                durationSpan.textContent = '0:00';
             }
+        }
 
-            function updateProgress() {
-                if (video.duration && isFinite(video.duration)) {
-                    const pct = (video.currentTime / video.duration) * 100;
-                    progressSlider.value = pct;
-                    currentTimeSpan.textContent = formatTime(video.currentTime);
-                    durationSpan.textContent = formatTime(video.duration);
-                    if (playlist[currentVideoIndex] && playlist[currentVideoIndex].duration === '0:00' && video
-                        .duration) {
-                        playlist[currentVideoIndex].duration = formatTime(video.duration);
-                        renderPlaylist(searchInput.value);
-                    }
-                }
+        function renderPlaylist(filter = '') {
+            const filtered = playlist.filter(v => v.title.toLowerCase().includes(filter.toLowerCase()));
+            playlistContainer.innerHTML = '';
+            if (filtered.length === 0) {
+                playlistContainer.innerHTML = `
+                    <div style="text-align:center;padding:20px;color:#666;font-size:0.9rem;">
+                        <i class="fas fa-video" style="font-size:2rem;display:block;margin-bottom:10px;"></i>
+                        ${playlist.length === 0 ? 'No videos uploaded yet.<br>Upload a video to get started!' : 'No matching videos'}
+                    </div>
+                `;
+                return;
             }
+            filtered.forEach((v, idx) => {
+                const originalIdx = playlist.indexOf(v);
+                const div = document.createElement('div');
+                div.className = 'playlist-item' + (originalIdx === currentVideoIndex ? ' active' : '');
+                const color = stringToColor(v.title);
+                div.innerHTML = `
+                    <div style="width:64px;height:44px;border-radius:12px;background:${color};display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;">
+                        <i class="fas fa-play" style="color:rgba(255,255,255,0.7);"></i>
+                    </div>
+                    <div class="pl-info"><div class="pl-title">${v.title}</div><div class="pl-duration">${v.duration || '0:00'} ${v.fileSize ? '· ' + formatFileSize(v.fileSize) : ''}</div></div>
+                `;
+                div.addEventListener('click', () => { loadVideo(originalIdx); });
+                playlistContainer.appendChild(div);
+            });
+        }
 
-            // ----- event listeners -----
-            playBtn.addEventListener('click', togglePlay);
-            video.addEventListener('play', updatePlayButton);
-            video.addEventListener('pause', updatePlayButton);
-            video.addEventListener('timeupdate', updateProgress);
+        // ============================================
+        // VIDEO CONTROLS
+        // ============================================
+        function togglePlay() {
+            if (video.paused) {
+                video.play().catch(e => showToast('Error playing video'));
+            } else {
+                video.pause();
+            }
+        }
 
-            video.addEventListener('loadedmetadata', () => {
+        function updatePlayButton() {
+            const icon = playBtn.querySelector('i');
+            if (video.paused) {
+                icon.className = 'fas fa-play';
+            } else {
+                icon.className = 'fas fa-pause';
+            }
+        }
+
+        function updateProgress() {
+            if (video.duration && isFinite(video.duration)) {
+                const pct = (video.currentTime / video.duration) * 100;
+                progressSlider.value = pct;
+                currentTimeSpan.textContent = formatTime(video.currentTime);
                 durationSpan.textContent = formatTime(video.duration);
-                if (playlist[currentVideoIndex]) {
+                if (playlist[currentVideoIndex] && playlist[currentVideoIndex].duration === '0:00' && video.duration) {
                     playlist[currentVideoIndex].duration = formatTime(video.duration);
                     renderPlaylist(searchInput.value);
                 }
-                videoPlaceholder.classList.add('hidden');
-                videoError.classList.add('hidden');
-                try {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = 160;
-                    canvas.height = 90;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                    const thumbnailData = canvas.toDataURL('image/jpeg');
-                    if (playlist[currentVideoIndex]) {
-                        playlist[currentVideoIndex].poster = thumbnailData;
-                        renderPlaylist(searchInput.value);
-                    }
-                } catch (e) {}
-            });
-
-            video.addEventListener('canplay', () => {
-                videoPlaceholder.classList.add('hidden');
-                videoError.classList.add('hidden');
-            });
-
-            video.addEventListener('error', (e) => {
-                console.error('Video error:', e);
-                videoError.classList.remove('hidden');
-                errorMessage.textContent = 'Failed to load video. The server may be unavailable.';
-                videoPlaceholder.classList.add('hidden');
-                showToast('Error loading video');
-            });
-
-            video.addEventListener('ended', () => { showToast('video finished'); });
-
-            retryBtn.addEventListener('click', () => {
-                videoError.classList.add('hidden');
-                const v = playlist[currentVideoIndex];
-                if (v) {
-                    video.src = v.src;
-                    video.load();
-                    showToast('Retrying...');
-                }
-            });
-
-            skipBack.addEventListener('click', () => { video.currentTime = Math.max(0, video.currentTime - 10); });
-            skipForward.addEventListener('click', () => { video.currentTime = Math.min(video.duration, video.currentTime +
-                    10); });
-
-            progressSlider.addEventListener('input', () => {
-                if (video.duration && isFinite(video.duration)) {
-                    video.currentTime = (progressSlider.value / 100) * video.duration;
-                }
-            });
-
-            volumeSlider.addEventListener('input', () => {
-                video.volume = parseFloat(volumeSlider.value);
-                video.muted = false;
-                muteBtn.querySelector('i').className = video.volume > 0 ? 'fas fa-volume-up' : 'fas fa-volume-off';
-            });
-            muteBtn.addEventListener('click', () => {
-                video.muted = !video.muted;
-                muteBtn.querySelector('i').className = video.muted ? 'fas fa-volume-off' : 'fas fa-volume-up';
-                if (!video.muted) volumeSlider.value = video.volume;
-            });
-
-            speedSelect.addEventListener('change', () => { video.playbackRate = parseFloat(speedSelect.value); });
-
-            theaterBtn.addEventListener('click', () => {
-                isTheater = !isTheater;
-                playerWrapper.style.maxWidth = isTheater ? '100%' : '100%';
-                playerWrapper.style.borderRadius = isTheater ? '0' : '28px';
-            });
-
-            pipBtn.addEventListener('click', async () => {
-                try {
-                    if (document.pictureInPictureElement) {
-                        await document.exitPictureInPicture();
-                    } else {
-                        await video.requestPictureInPicture();
-                    }
-                } catch (e) {}
-            });
-
-            fullscreenBtn.addEventListener('click', () => {
-                if (!document.fullscreenElement) {
-                    playerWrapper.requestFullscreen?.();
-                } else {
-                    document.exitFullscreen?.();
-                }
-            });
-
-            document.addEventListener('keydown', (e) => {
-                if (e.target.tagName === 'INPUT') return;
-                switch (e.key) {
-                    case ' ':
-                        e.preventDefault();
-                        togglePlay();
-                        break;
-                    case 'ArrowLeft':
-                        e.preventDefault();
-                        video.currentTime = Math.max(0, video.currentTime - 5);
-                        break;
-                    case 'ArrowRight':
-                        e.preventDefault();
-                        video.currentTime = Math.min(video.duration, video.currentTime + 5);
-                        break;
-                    case 'ArrowUp':
-                        e.preventDefault();
-                        video.volume = Math.min(1, video.volume + 0.1);
-                        volumeSlider.value = video.volume;
-                        break;
-                    case 'ArrowDown':
-                        e.preventDefault();
-                        video.volume = Math.max(0, video.volume - 0.1);
-                        volumeSlider.value = video.volume;
-                        break;
-                    case 'f':
-                        e.preventDefault();
-                        fullscreenBtn.click();
-                        break;
-                    case 'm':
-                        e.preventDefault();
-                        muteBtn.click();
-                        break;
-                }
-            });
-
-            // ----- FILE UPLOAD -----
-            fileUpload.addEventListener('change', async (e) => {
-                const file = e.target.files[0];
-                if (file && file.type.startsWith('video/')) {
-                    const success = await uploadVideoToServer(file);
-                    if (success) {
-                        fileUpload.value = '';
-                    }
-                } else {
-                    showToast('Please select a video file');
-                }
-            });
-
-            // ----- DRAG AND DROP -----
-            let dragCounter = 0;
-            playerWrapper.addEventListener('dragenter', (e) => {
-                e.preventDefault();
-                dragCounter++;
-                playerWrapper.classList.add('drag-over');
-            });
-            playerWrapper.addEventListener('dragover', (e) => { e.preventDefault(); });
-            playerWrapper.addEventListener('dragleave', (e) => {
-                e.preventDefault();
-                dragCounter--;
-                if (dragCounter === 0) playerWrapper.classList.remove('drag-over');
-            });
-            playerWrapper.addEventListener('drop', async (e) => {
-                e.preventDefault();
-                dragCounter = 0;
-                playerWrapper.classList.remove('drag-over');
-                const file = e.dataTransfer.files[0];
-                if (file && file.type.startsWith('video/')) {
-                    await uploadVideoToServer(file);
-                } else {
-                    showToast('Please drop a video file');
-                }
-            });
-
-            // search
-            searchInput.addEventListener('input', () => { renderPlaylist(searchInput.value); });
-
-            // social buttons
-            likeBtn.addEventListener('click', handleLike);
-            dislikeBtn.addEventListener('click', handleDislike);
-            shareBtn.addEventListener('click', () => {
-                const v = playlist[currentVideoIndex];
-                if (v && v.fileUrl) {
-                    navigator.share?.({
-                        title: v.title,
-                        text: 'Check out this video!',
-                        url: v.fileUrl
-                    }).catch(() => {
-                        navigator.clipboard?.writeText(v.fileUrl).then(() => {
-                            showToast('URL copied to clipboard!');
-                        }).catch(() => {
-                            showToast('Share: ' + v.fileUrl);
-                        });
-                    });
-                } else {
-                    showToast('No video selected');
-                }
-            });
-            saveBtn.addEventListener('click', handleSave);
-
-            // comments
-            addCommentBtn.addEventListener('click', () => { addComment(commentInput.value); });
-            commentInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') { addComment(commentInput.value); }
-            });
-
-            // ----- init -----
-            async function init() {
-                renderPlaylist();
-                renderComments();
-                
-                await loadFilesFromServer();
-                
-                setTimeout(() => {
-                    loading.classList.add('hidden');
-                    app.classList.remove('hidden');
-                }, 600);
-                
-                video.controls = false;
-                video.loop = false;
-
-                // Ripple effect
-                document.querySelectorAll('.ctrl-btn, .action-bar button, .upload-label, .nav-menu a').forEach(btn => {
-                    btn.addEventListener('click', function(e) {
-                        const rect = this.getBoundingClientRect();
-                        const x = e.clientX - rect.left;
-                        const y = e.clientY - rect.top;
-                        const ripple = document.createElement('span');
-                        ripple.style.cssText =
-                            `position:absolute; left:${x-30}px; top:${y-30}px; width:60px; height:60px; background:rgba(255,255,255,0.2); border-radius:50%; transform:scale(0); animation: rippleAnim 0.6s linear; pointer-events:none;`;
-                        this.style.position = 'relative';
-                        this.appendChild(ripple);
-                        setTimeout(() => ripple.remove(), 600);
-                    });
-                });
-                if (!document.getElementById('rippleStyle')) {
-                    const style = document.createElement('style');
-                    style.id = 'rippleStyle';
-                    style.textContent = `@keyframes rippleAnim { to { transform: scale(4); opacity: 0; } }`;
-                    document.head.appendChild(style);
-                }
             }
+        }
 
-            init();
-        })();
+        // ============================================
+        // UPLOAD
+        // ============================================
+        async function uploadVideoToServer(file) {
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                showToast('Uploading...');
+                
+                const response = await fetch(`${API_BASE}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Upload failed: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast('Upload successful!');
+                    
+                    const newVideo = {
+                        id: data.fileId,
+                        title: file.name.replace(/\.[^/.]+$/, ''),
+                        filename: file.name,
+                        src: `${API_STREAM}/${data.fileId}.mp4`,
+                        duration: '0:00',
+                        views: 0,
+                        date: new Date().toISOString().slice(0, 10),
+                        desc: 'uploaded video',
+                        fileSize: file.size
+                    };
+                    playlist.push(newVideo);
+                    renderPlaylist(searchInput.value);
+                    loadVideo(playlist.length - 1);
+                    return true;
+                } else {
+                    showToast('Upload failed: ' + (data.message || 'Unknown error'));
+                    return false;
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                showToast('Upload error: ' + error.message);
+                return false;
+            }
+        }
+
+        // ============================================
+        // EVENT LISTENERS
+        // ============================================
+        playBtn.addEventListener('click', togglePlay);
+        video.addEventListener('play', updatePlayButton);
+        video.addEventListener('pause', updatePlayButton);
+        video.addEventListener('timeupdate', updateProgress);
+
+        video.addEventListener('loadedmetadata', () => {
+            durationSpan.textContent = formatTime(video.duration);
+            if (playlist[currentVideoIndex]) {
+                playlist[currentVideoIndex].duration = formatTime(video.duration);
+                renderPlaylist(searchInput.value);
+            }
+        });
+
+        skipBack.addEventListener('click', () => { video.currentTime = Math.max(0, video.currentTime - 10); });
+        skipForward.addEventListener('click', () => { video.currentTime = Math.min(video.duration, video.currentTime + 10); });
+
+        progressSlider.addEventListener('input', () => {
+            if (video.duration && isFinite(video.duration)) {
+                video.currentTime = (progressSlider.value / 100) * video.duration;
+            }
+        });
+
+        volumeSlider.addEventListener('input', () => {
+            video.volume = parseFloat(volumeSlider.value);
+            video.muted = false;
+            muteBtn.querySelector('i').className = video.volume > 0 ? 'fas fa-volume-up' : 'fas fa-volume-off';
+        });
+        muteBtn.addEventListener('click', () => {
+            video.muted = !video.muted;
+            muteBtn.querySelector('i').className = video.muted ? 'fas fa-volume-off' : 'fas fa-volume-up';
+            if (!video.muted) volumeSlider.value = video.volume;
+        });
+
+        speedSelect.addEventListener('change', () => { video.playbackRate = parseFloat(speedSelect.value); });
+
+        theaterBtn.addEventListener('click', () => {
+            playerWrapper.style.maxWidth = playerWrapper.style.maxWidth === '100%' ? '100%' : '100%';
+            playerWrapper.style.borderRadius = playerWrapper.style.borderRadius === '0' ? '28px' : '0';
+        });
+
+        fullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                playerWrapper.requestFullscreen?.();
+            } else {
+                document.exitFullscreen?.();
+            }
+        });
+
+        fileUpload.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file && file.type.startsWith('video/')) {
+                const success = await uploadVideoToServer(file);
+                if (success) fileUpload.value = '';
+            } else {
+                showToast('Please select a video file');
+            }
+        });
+
+        searchInput.addEventListener('input', () => { renderPlaylist(searchInput.value); });
+
+        likeBtn.addEventListener('click', () => showToast('Liked!'));
+        dislikeBtn.addEventListener('click', () => showToast('Disliked!'));
+        shareBtn.addEventListener('click', () => {
+            const v = playlist[currentVideoIndex];
+            if (v) {
+                navigator.clipboard?.writeText(v.src).then(() => {
+                    showToast('URL copied to clipboard!');
+                }).catch(() => {
+                    showToast('Share: ' + v.src);
+                });
+            }
+        });
+        saveBtn.addEventListener('click', () => showToast('Saved!'));
+
+        // ============================================
+        // KEYBOARD SHORTCUTS
+        // ============================================
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT') return;
+            switch (e.key) {
+                case ' ': e.preventDefault(); togglePlay(); break;
+                case 'ArrowLeft': e.preventDefault(); video.currentTime = Math.max(0, video.currentTime - 5); break;
+                case 'ArrowRight': e.preventDefault(); video.currentTime = Math.min(video.duration, video.currentTime + 5); break;
+                case 'f': e.preventDefault(); fullscreenBtn.click(); break;
+                case 'm': e.preventDefault(); muteBtn.click(); break;
+            }
+        });
+
+        // ============================================
+        // INIT
+        // ============================================
+        copyrightYear.textContent = new Date().getFullYear();
+
+        async function init() {
+            renderPlaylist();
+            await loadFiles();
+            setTimeout(() => {
+                loading.classList.add('hidden');
+                app.classList.remove('hidden');
+            }, 600);
+            video.controls = false;
+        }
+
+        init();
     </script>
 </body>
     </html>
