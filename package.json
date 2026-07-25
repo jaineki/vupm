@@ -1,6 +1,6 @@
 {
   "name": "jay-video-hub",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Complete video hub with chat, file management, and admin panel",
   "main": "index.js",
   "scripts": {
