@@ -6,6 +6,7 @@ const { v4: uuidv4 } = require("uuid");
 const { MongoClient, ObjectId, GridFSBucket } = require('mongodb');
 const multer = require('multer');
 const crypto = require('crypto');
+const axios = require("axios"); // <-- ADD THIS
 require('dotenv').config();
 
 const app = express();
@@ -39,7 +40,7 @@ let messages = [];
 const MAX_MESSAGE_LENGTH = 500;
 const MAX_USERNAME_LENGTH = 30;
 const MAX_MESSAGES_STORED = 1000;
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "selovasx2024";
 
 // ============================================
 // FILE UPLOAD CONFIGURATION
@@ -869,7 +870,7 @@ app.delete('/file/:id', async (req, res) => {
 });
 
 // ============================================
-// SOCKET.IO LOGIC
+// SOCKET.IO LOGIC (with AI Integration)
 // ============================================
 io.on("connection", (socket) => {
   console.log(`New client connected: ${socket.id}`);
@@ -928,26 +929,29 @@ io.on("connection", (socket) => {
     console.log(`User ${trimmedUsername} (${userId}) joined`);
   });
 
-  // Send message
-  socket.on("message:send", (data) => {
+  // ============================================
+  // SEND MESSAGE WITH AI SUPPORT
+  // ============================================
+  socket.on("message:send", async (data) => {
     const { message } = data;
-    
+
     const user = Array.from(users.values()).find(
       u => u.socketId === socket.id
     );
-    
+
     if (!user) {
       socket.emit("error", { message: "You must join the chat first" });
       return;
     }
-    
+
     if (!message || message.trim().length === 0) {
       socket.emit("error", { message: "Message cannot be empty" });
       return;
     }
-    
+
     const trimmedMessage = message.trim().slice(0, MAX_MESSAGE_LENGTH);
-    
+
+    // Save the user's message
     const messageObj = {
       id: uuidv4(),
       userId: user.userId,
@@ -955,14 +959,90 @@ io.on("connection", (socket) => {
       message: trimmedMessage,
       timestamp: new Date().toISOString()
     };
-    
+
     messages.push(messageObj);
     if (messages.length > MAX_MESSAGES_STORED) {
       messages = messages.slice(-MAX_MESSAGES_STORED);
     }
-    
+
     io.emit("message:new", messageObj);
-    
+
+    // ============================================
+    // AI COMMAND HANDLER
+    // ============================================
+    if (trimmedMessage.toLowerCase().startsWith("/ai ")) {
+
+      const prompt = trimmedMessage.substring(4).trim();
+
+      // Send typing indicator for AI
+      socket.broadcast.emit("typing:start", {
+        userId: "ai-bot",
+        username: "🤖 AI"
+      });
+
+      try {
+        // Call the AI API
+        const response = await axios.get(
+          "https://selovapi.onrender.com/api/toolbot",
+          {
+            params: {
+              query: prompt
+            },
+            timeout: 15000 // 15 second timeout
+          }
+        );
+
+        // Extract the AI response
+        const aiReply =
+          response.data.response ||
+          response.data.answer ||
+          response.data.message ||
+          response.data.result ||
+          JSON.stringify(response.data);
+
+        // Create AI message
+        const aiMessage = {
+          id: uuidv4(),
+          userId: "ai-bot",
+          username: "🤖 AI",
+          message: aiReply.substring(0, 2000), // Limit message length
+          timestamp: new Date().toISOString()
+        };
+
+        messages.push(aiMessage);
+        if (messages.length > MAX_MESSAGES_STORED) {
+          messages = messages.slice(-MAX_MESSAGES_STORED);
+        }
+
+        io.emit("message:new", aiMessage);
+
+      } catch (err) {
+        console.error('AI Error:', err.message);
+
+        // Send error message
+        const errorMessage = {
+          id: uuidv4(),
+          userId: "ai-bot",
+          username: "🤖 AI",
+          message: "⚠️ Sorry, I couldn't reach the AI service. Please try again later.",
+          timestamp: new Date().toISOString()
+        };
+
+        messages.push(errorMessage);
+        if (messages.length > MAX_MESSAGES_STORED) {
+          messages = messages.slice(-MAX_MESSAGES_STORED);
+        }
+
+        io.emit("message:new", errorMessage);
+      } finally {
+        // Stop typing indicator
+        socket.broadcast.emit("typing:stop", {
+          userId: "ai-bot",
+          username: "🤖 AI"
+        });
+      }
+    }
+
     console.log(`Message from ${user.username}: ${trimmedMessage}`);
   });
 
@@ -1054,6 +1134,7 @@ async function startServer() {
     console.log(`\n🚀 Server running on port ${PORT}`);
     console.log(`📁 Database: ${DB_NAME || 'videos'}`);
     console.log(`🔑 Admin password: ${ADMIN_PASSWORD}`);
+    console.log(`🤖 AI Bot: Enabled (/ai command)`);
     console.log('\n📌 Pages:');
     console.log(`   🏠 Main Player: http://localhost:${PORT}/`);
     console.log(`   💬 Chat: http://localhost:${PORT}/chat.html`);
@@ -1064,6 +1145,9 @@ async function startServer() {
     console.log(`   📁 File API: /files`);
     console.log(`   📤 Upload: /upload`);
     console.log(`   🎬 Stream: /stream/:id`);
+    console.log(`\n🤖 AI Commands:`);
+    console.log(`   /ai [question] - Ask AI anything`);
+    console.log(`   Example: /ai who is David?`);
   });
 }
 
