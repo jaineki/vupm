@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+    <title>Manage Files · Jay Video Hub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #0b0b14;
+            color: #eee;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+        .header h1 i {
+            color: #6c5ce7;
+        }
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            text-decoration: none;
+        }
+        .btn-primary {
+            background: #6c5ce7;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #5a4bd1;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(108, 92, 231, 0.3);
+        }
+        .btn-success {
+            background: #00b894;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #00a381;
+            transform: translateY(-2px);
+        }
+        .btn-danger {
+            background: #e17055;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #d63031;
+            transform: translateY(-2px);
+        }
+        .btn-warning {
+            background: #fdcb6e;
+            color: #2d3436;
+        }
+        .btn-warning:hover {
+            background: #fdcb6e;
+            transform: translateY(-2px);
+        }
+        .btn-outline {
+            background: transparent;
+            color: #eee;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .btn-sm {
+            padding: 6px 14px;
+            font-size: 0.8rem;
+        }
+        .btn-back {
+            background: rgba(255, 255, 255, 0.05);
+            color: #eee;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .btn-back:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .stat-card .stat-value {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #6c5ce7;
+        }
+        .stat-card .stat-label {
+            font-size: 0.85rem;
+            opacity: 0.6;
+            margin-top: 4px;
+        }
+
+        /* File Grid */
+        .file-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .file-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            transition: all 0.3s;
+        }
+        .file-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border-color: rgba(108, 92, 231, 0.3);
+        }
+        .file-card .file-thumbnail {
+            width: 100%;
+            height: 180px;
+            border-radius: 12px;
+            background: #1a1a2e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+        .file-card .file-thumbnail video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .file-card .file-thumbnail .file-icon {
+            font-size: 4rem;
+            color: #6c5ce7;
+            opacity: 0.5;
+        }
+        .file-card .file-info {
+            margin-bottom: 12px;
+        }
+        .file-card .file-name {
+            font-weight: 500;
+            font-size: 1rem;
+            margin-bottom: 4px;
+            word-break: break-all;
+        }
+        .file-card .file-meta {
+            font-size: 0.8rem;
+            opacity: 0.6;
+        }
+        .file-card .file-id {
+            font-size: 0.7rem;
+            opacity: 0.4;
+            font-family: monospace;
+            margin-top: 4px;
+            word-break: break-all;
+        }
+        .file-card .file-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .file-card .file-actions .btn {
+            flex: 1;
+            justify-content: center;
+            min-width: 80px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+            grid-column: 1 / -1;
+        }
+        .empty-state i {
+            font-size: 4rem;
+            color: #6c5ce7;
+            opacity: 0.3;
+            margin-bottom: 20px;
+        }
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+        .empty-state p {
+            opacity: 0.6;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        .modal-overlay.hidden {
+            display: none;
+        }
+        .modal-content {
+            background: #1a1a2e;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: modalSlideIn 0.3s ease;
+        }
+        @keyframes modalSlideIn {
+            from {
+                transform: translateY(-30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        .modal-content h2 {
+            margin-bottom: 10px;
+        }
+        .modal-content h2 i {
+            color: #6c5ce7;
+        }
+        .modal-content p {
+            opacity: 0.7;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+        }
+        .modal-content .modal-body {
+            margin: 20px 0;
+        }
+        .modal-content input[type="text"] {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: #eee;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1rem;
+            outline: none;
+            transition: 0.3s;
+        }
+        .modal-content input[type="text"]:focus {
+            border-color: #6c5ce7;
+            box-shadow: 0 0 20px rgba(108, 92, 231, 0.1);
+        }
+        .modal-content .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        .modal-content .modal-actions .btn {
+            flex: 1;
+            justify-content: center;
+            padding: 12px;
+        }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 9999;
+            max-width: 90%;
+        }
+        .toast {
+            background: #1a1a2e;
+            color: #eee;
+            padding: 12px 24px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+            border-left: 4px solid #6c5ce7;
+            animation: slideIn 0.4s ease;
+            font-weight: 400;
+            font-size: 0.9rem;
+        }
+        .toast.success {
+            border-left-color: #00b894;
+        }
+        .toast.error {
+            border-left-color: #e17055;
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top: 4px solid #6c5ce7;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 15px;
+                padding: 15px 20px;
+            }
+            .header h1 {
+                font-size: 1.4rem;
+            }
+            .header-actions {
+                justify-content: stretch;
+            }
+            .header-actions .btn {
+                flex: 1;
+                justify-content: center;
+            }
+            .file-grid {
+                grid-template-columns: 1fr;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .modal-content {
+                padding: 20px;
+                margin: 10px;
+            }
+            .file-card .file-actions .btn {
+                min-width: 60px;
+                font-size: 0.75rem;
+                padding: 6px 10px;
+            }
+        }
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            .modal-content .modal-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1><i class="fas fa-folder-open"></i> File Management</h1>
+            <div class="header-actions">
+                <a href="/" class="btn btn-back">
+                    <i class="fas fa-arrow-left"></i> Back to Player
+                </a>
+                <button class="btn btn-success" onclick="refreshFiles()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="stat-value" id="totalFiles">0</div>
+                <div class="stat-label">Total Videos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalSize">0 MB</div>
+                <div class="stat-label">Total Storage Used</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="videoCount">0</div>
+                <div class="stat-label">Video Files</div>
+            </div>
+        </div>
+
+        <!-- File Grid -->
+        <div id="fileGrid" class="file-grid"></div>
+    </div>
+
+    <!-- Rename Modal -->
+    <div id="renameModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2><i class="fas fa-edit"></i> Rename Video</h2>
+            <p>Enter a new name for this video</p>
+            <div class="modal-body">
+                <input type="text" id="renameInput" placeholder="New filename" />
+                <input type="hidden" id="renameFileId" />
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="hideRenameModal()">Cancel</button>
+                <button class="btn btn-warning" id="renameBtn">Rename</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2 style="color:#e17055;"><i class="fas fa-exclamation-triangle"></i> Delete Video</h2>
+            <p>Are you sure you want to delete this video? This action cannot be undone.</p>
+            <div class="modal-body">
+                <p style="font-size:0.9rem;opacity:0.6;" id="deleteFileName"></p>
+                <p style="font-size:0.75rem;opacity:0.4;margin-top:8px;font-family:monospace;" id="deleteFileIdDisplay"></p>
+                <input type="hidden" id="deleteFileId" />
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="hideDeleteModal()">Cancel</button>
+                <button class="btn btn-danger" id="deleteBtn">Delete Permanently</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script>
+        // ============================================
+        // CONFIGURATION
+        // ============================================
+        const API_BASE = 'https://jay-so2u.onrender.com';
+        const API_FILES = `${API_BASE}/files`;
+        const API_STREAM = `${API_BASE}/stream`;
+
+        // ============================================
+        // STATE
+        // ============================================
+        let files = [];
+
+        // ============================================
+        // TOAST NOTIFICATIONS
+        // ============================================
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(40px)';
+                setTimeout(() => toast.remove(), 400);
+            }, 3000);
+        }
+
+        // ============================================
+        // FORMAT HELPERS
+        // ============================================
+        function formatFileSize(bytes) {
+            if (!bytes) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'Unknown';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function getFileExtension(filename) {
+            return filename.split('.').pop().toLowerCase();
+        }
+
+        function isVideoFile(filename) {
+            const videoExtensions = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'mpeg', '3gp', 'flv'];
+            const ext = getFileExtension(filename);
+            return videoExtensions.includes(ext);
+        }
+
+        function stringToColor(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const hue = Math.abs(hash % 360);
+            return `hsl(${hue}, 60%, 25%)`;
+        }
+
+        // ============================================
+        // LOAD FILES FROM SERVER
+        // ============================================
+        async function loadFiles() {
+            try {
+                const response = await fetch(API_FILES);
+                if (!response.ok) {
+                    throw new Error(`Failed to load files: ${response.status}`);
+                }
+                const data = await response.json();
+                
+                if (data.success && data.files) {
+                    files = data.files;
+                    renderFiles();
+                    updateStats();
+                    return true;
+                } else {
+                    throw new Error(data.message || 'Failed to load files');
+                }
+            } catch (error) {
+                console.error('Error loading files:', error);
+                showToast('Error loading files: ' + error.message, 'error');
+                return false;
+            }
+        }
+
+        function refreshFiles() {
+            showToast('Refreshing...', 'info');
+            loadFiles();
+        }
+
+        // ============================================
+        // RENDER FILES
+        // ============================================
+        function renderFiles() {
+            const grid = document.getElementById('fileGrid');
+            
+            if (files.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-video"></i>
+                        <h3>No videos uploaded yet</h3>
+                        <p>Upload videos from the main player page</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = files.map(file => {
+                const isVideo = isVideoFile(file.filename);
+                const fileId = file.id || file._id;
+                const color = stringToColor(file.filename);
+                
+                return `
+                    <div class="file-card" data-id="${fileId}">
+                        <div class="file-thumbnail" style="background:${color};">
+                            ${isVideo ? `
+                                <video muted preload="metadata">
+                                    <source src="${API_STREAM}/${fileId}.mp4" type="video/mp4">
+                                </video>
+                            ` : `
+                                <div class="file-icon">
+                                    <i class="fas fa-file-video"></i>
+                                </div>
+                            `}
+                        </div>
+                        <div class="file-info">
+                            <div class="file-name">${file.filename || 'Untitled'}</div>
+                            <div class="file-meta">
+                                ${formatFileSize(file.fileSize || file.length || 0)} · ${formatDate(file.uploadDate || file.uploadDate)}
+                            </div>
+                            <div class="file-id">ID: ${fileId}</div>
+                        </div>
+                        <div class="file-actions">
+                            <a href="${API_STREAM}/${fileId}.mp4" target="_blank" class="btn btn-success btn-sm">
+                                <i class="fas fa-play"></i> Play
+                            </a>
+                            <button class="btn btn-warning btn-sm" onclick="showRenameModal('${fileId}')">
+                                <i class="fas fa-edit"></i> Rename
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="showDeleteModal('${fileId}')">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ============================================
+        // UPDATE STATS
+        // ============================================
+        function updateStats() {
+            document.getElementById('totalFiles').textContent = files.length;
+            
+            const totalSize = files.reduce((sum, file) => sum + (file.fileSize || file.length || 0), 0);
+            document.getElementById('totalSize').textContent = formatFileSize(totalSize);
+            
+            const videoCount = files.filter(file => isVideoFile(file.filename)).length;
+            document.getElementById('videoCount').textContent = videoCount;
+        }
+
+        // ============================================
+        // RENAME VIDEO
+        // ============================================
+        let renameFileId = null;
+
+        function showRenameModal(fileId) {
+            const file = files.find(f => (f.id || f._id) === fileId);
+            if (!file) {
+                showToast('File not found', 'error');
+                return;
+            }
+            
+            renameFileId = fileId;
+            document.getElementById('renameInput').value = file.filename || '';
+            document.getElementById('renameFileId').value = fileId;
+            document.getElementById('renameModal').classList.remove('hidden');
+            document.getElementById('renameInput').focus();
+            document.getElementById('renameInput').select();
+        }
+
+        function hideRenameModal() {
+            document.getElementById('renameModal').classList.add('hidden');
+            renameFileId = null;
+        }
+
+        document.getElementById('renameBtn').addEventListener('click', async function() {
+            const fileId = document.getElementById('renameFileId').value;
+            const newFilename = document.getElementById('renameInput').value.trim();
+            
+            if (!newFilename) {
+                showToast('Please enter a filename', 'error');
+                return;
+            }
+
+            this.disabled = true;
+            this.textContent = 'Renaming...';
+
+            try {
+                const response = await fetch(`${API_BASE}/file/${fileId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ filename: newFilename })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast('File renamed successfully!', 'success');
+                    hideRenameModal();
+                    await loadFiles();
+                } else {
+                    showToast('Rename failed: ' + (data.message || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                console.error('Rename error:', error);
+                showToast('Rename error: ' + error.message, 'error');
+            } finally {
+                this.disabled = false;
+                this.textContent = 'Rename';
+            }
+        });
+
+        // Enter key for rename
+        document.getElementById('renameInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('renameBtn').click();
+            }
+            if (e.key === 'Escape') {
+                hideRenameModal();
+            }
+        });
+
+        // ============================================
+        // DELETE VIDEO
+        // ============================================
+        let deleteFileId = null;
+
+        function showDeleteModal(fileId) {
+            const file = files.find(f => (f.id || f._id) === fileId);
+            if (!file) {
+                showToast('File not found', 'error');
+                return;
+            }
+            
+            deleteFileId = fileId;
+            document.getElementById('deleteFileName').textContent = `"${file.filename || 'Untitled'}"`;
+            document.getElementById('deleteFileIdDisplay').textContent = `ID: ${fileId}`;
+            document.getElementById('deleteFileId').value = fileId;
+            document.getElementById('deleteModal').classList.remove('hidden');
+        }
+
+        function hideDeleteModal() {
+            document.getElementById('deleteModal').classList.add('hidden');
+            deleteFileId = null;
+        }
+
+        document.getElementById('deleteBtn').addEventListener('click', async function() {
+            const fileId = document.getElementById('deleteFileId').value;
+
+            this.disabled = true;
+            this.textContent = 'Deleting...';
+
+            try {
+                const response = await fetch(`${API_BASE}/file/${fileId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast('File deleted successfully!', 'success');
+                    hideDeleteModal();
+                    await loadFiles();
+                } else {
+                    showToast('Delete failed: ' + (data.message || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                console.error('Delete error:', error);
+                showToast('Delete error: ' + error.message, 'error');
+            } finally {
+                this.disabled = false;
+                this.textContent = 'Delete Permanently';
+            }
+        });
+
+        // Close modals with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                hideRenameModal();
+                hideDeleteModal();
+            }
+        });
+
+        // Close modals by clicking overlay
+        document.querySelectorAll('.modal-overlay').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.add('hidden');
+                }
+            });
+        });
+
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        async function init() {
+            // Show loading state
+            document.getElementById('fileGrid').innerHTML = `
+                <div class="empty-state">
+                    <div class="spinner"></div>
+                    <h3>Loading videos...</h3>
+                </div>
+            `;
+            
+            await loadFiles();
+            
+            // Auto-refresh every 30 seconds
+            setInterval(() => {
+                loadFiles();
+            }, 30000);
+        }
+
+        // Start the app
+        init();
+    </script>
+</body>
+  </html>
