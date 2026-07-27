@@ -6,7 +6,7 @@ const { v4: uuidv4 } = require("uuid");
 const { MongoClient, ObjectId, GridFSBucket } = require('mongodb');
 const multer = require('multer');
 const crypto = require('crypto');
-const axios = require("axios"); // <-- ADD THIS
+const axios = require("axios");
 require('dotenv').config();
 
 const app = express();
@@ -40,7 +40,7 @@ let messages = [];
 const MAX_MESSAGE_LENGTH = 500;
 const MAX_USERNAME_LENGTH = 30;
 const MAX_MESSAGES_STORED = 1000;
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "selovasx2024";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
 
 // ============================================
 // FILE UPLOAD CONFIGURATION
@@ -930,7 +930,7 @@ io.on("connection", (socket) => {
   });
 
   // ============================================
-  // SEND MESSAGE WITH AI SUPPORT
+  // SEND MESSAGE WITH AI SUPPORT (UPDATED API)
   // ============================================
   socket.on("message:send", async (data) => {
     const { message } = data;
@@ -968,37 +968,62 @@ io.on("connection", (socket) => {
     io.emit("message:new", messageObj);
 
     // ============================================
-    // AI COMMAND HANDLER
+    // AI COMMAND HANDLER (UPDATED API)
     // ============================================
     if (trimmedMessage.toLowerCase().startsWith("/ai ")) {
 
       const prompt = trimmedMessage.substring(4).trim();
 
+      if (!prompt) {
+        const errorMsg = {
+          id: uuidv4(),
+          userId: "ai-bot",
+          username: "🤖 AI",
+          message: "⚠️ Please ask a question. Example: `/ai who is David?`",
+          timestamp: new Date().toISOString()
+        };
+        messages.push(errorMsg);
+        io.emit("message:new", errorMsg);
+        return;
+      }
+
       // Send typing indicator for AI
-      socket.broadcast.emit("typing:start", {
+      io.emit("typing:start", {
         userId: "ai-bot",
         username: "🤖 AI"
       });
 
       try {
-        // Call the AI API
+        // Call the updated AI API
         const response = await axios.get(
-          "https://selovapi.onrender.com/api/toolbot",
+          "https://selovapi.onrender.com/api/jay",
           {
             params: {
-              query: prompt
+              prompt: prompt,
+              uid: "8" // You can change this to a dynamic user ID
             },
             timeout: 15000 // 15 second timeout
           }
         );
 
         // Extract the AI response
-        const aiReply =
-          response.data.response ||
-          response.data.answer ||
-          response.data.message ||
-          response.data.result ||
-          JSON.stringify(response.data);
+        let aiReply = "Sorry, I couldn't understand that.";
+
+        if (response.data) {
+          if (response.data.response) {
+            aiReply = response.data.response;
+          } else if (response.data.answer) {
+            aiReply = response.data.answer;
+          } else if (response.data.message) {
+            aiReply = response.data.message;
+          } else if (response.data.result) {
+            aiReply = response.data.result;
+          } else if (typeof response.data === 'string') {
+            aiReply = response.data;
+          } else {
+            aiReply = JSON.stringify(response.data);
+          }
+        }
 
         // Create AI message
         const aiMessage = {
@@ -1036,7 +1061,7 @@ io.on("connection", (socket) => {
         io.emit("message:new", errorMessage);
       } finally {
         // Stop typing indicator
-        socket.broadcast.emit("typing:stop", {
+        io.emit("typing:stop", {
           userId: "ai-bot",
           username: "🤖 AI"
         });
@@ -1135,6 +1160,7 @@ async function startServer() {
     console.log(`📁 Database: ${DB_NAME || 'videos'}`);
     console.log(`🔑 Admin password: ${ADMIN_PASSWORD}`);
     console.log(`🤖 AI Bot: Enabled (/ai command)`);
+    console.log(`🌐 AI API: https://selovapi.onrender.com/api/jay`);
     console.log('\n📌 Pages:');
     console.log(`   🏠 Main Player: http://localhost:${PORT}/`);
     console.log(`   💬 Chat: http://localhost:${PORT}/chat.html`);
