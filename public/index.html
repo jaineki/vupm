@@ -1,0 +1,1719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+    <title>Jay Video Hub · social player</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <style>
+        /* ---------- RESET & BASE ---------- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #0b0b14;
+            color: #eee;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 0.8rem;
+        }
+        #app {
+            max-width: 1440px;
+            width: 100%;
+        }
+
+        /* ---------- LOADING ---------- */
+        #loading-screen {
+            position: fixed;
+            inset: 0;
+            background: #0b0b14;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            transition: opacity 0.8s;
+        }
+        #loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid #2a2a3a;
+            border-top: 5px solid #6c5ce7;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        #loading-screen p {
+            margin-top: 1.2rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+            color: #aaa;
+        }
+
+        /* ---------- GLASS ---------- */
+        .glass {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+        .hidden {
+            display: none !important;
+        }
+
+        /* ---------- HEADER ---------- */
+        .glass-header {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.7rem 1rem;
+            padding: 0.6rem 1.2rem;
+            margin-bottom: 1.2rem;
+            border-radius: 40px;
+            background: rgba(20, 20, 30, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .logo {
+            font-weight: 700;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .logo i {
+            color: #6c5ce7;
+        }
+        .nav-menu {
+            display: flex;
+            gap: 0.5rem;
+            font-weight: 400;
+            font-size: 0.85rem;
+            flex-wrap: wrap;
+        }
+        .nav-menu a {
+            text-decoration: none;
+            color: inherit;
+            opacity: 0.7;
+            transition: 0.2s;
+            cursor: pointer;
+            padding: 4px 12px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+        .nav-menu a:hover {
+            opacity: 1;
+            background: rgba(255,255,255,0.05);
+        }
+        .nav-menu a.active {
+            opacity: 1;
+            color: #6c5ce7;
+            background: rgba(108,92,231,0.15);
+        }
+        .nav-menu a.chat-link {
+            color: #0084ff;
+        }
+        .nav-menu a.chat-link:hover {
+            background: rgba(0,132,255,0.15);
+        }
+        .nav-menu a.chat-link.active {
+            color: #0084ff;
+            background: rgba(0,132,255,0.2);
+        }
+        .search-wrapper {
+            flex: 1;
+            min-width: 120px;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .search-wrapper input {
+            width: 100%;
+            padding: 0.4rem 0.8rem 0.4rem 2.2rem;
+            border-radius: 40px;
+            border: none;
+            background: rgba(255, 255, 255, 0.08);
+            color: #eee;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.85rem;
+            outline: none;
+        }
+        .search-wrapper i {
+            position: absolute;
+            left: 12px;
+            opacity: 0.5;
+            font-size: 0.9rem;
+        }
+        .user-profile {
+            font-size: 1.6rem;
+            opacity: 0.8;
+            cursor: pointer;
+        }
+
+        /* ---------- MAIN GRID ---------- */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 1.2rem;
+            margin-bottom: 1.2rem;
+        }
+        @media (max-width: 860px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+        }
+
+        /* ---------- VIDEO PLAYER ---------- */
+        .player-wrapper {
+            position: relative;
+            border-radius: 28px;
+            overflow: hidden;
+            background: #0a0a14;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+            width: 100%;
+            min-height: 300px;
+        }
+        .player-wrapper video {
+            width: 100%;
+            display: block;
+            aspect-ratio: 9 / 16;
+            background: #0a0a14;
+            object-fit: contain;
+            max-height: 80vh;
+        }
+        .player-wrapper .video-placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 1.2rem;
+            gap: 1rem;
+            background: #0a0a14;
+        }
+        .player-wrapper .video-placeholder i {
+            font-size: 4rem;
+            color: #6c5ce7;
+            opacity: 0.5;
+        }
+        .custom-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 8px 12px 10px;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            z-index: 10;
+        }
+        .progress-bar-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .progress-slider {
+            flex: 1;
+            height: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            outline: none;
+        }
+        .progress-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #6c5ce7;
+            cursor: pointer;
+        }
+        .progress-time {
+            display: flex;
+            gap: 8px;
+            font-size: 0.7rem;
+            opacity: 0.8;
+            white-space: nowrap;
+        }
+        .controls-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px 10px;
+        }
+        .ctrl-btn {
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 30px;
+            opacity: 0.8;
+        }
+        .ctrl-btn:hover {
+            opacity: 1;
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .volume-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .volume-group input[type="range"] {
+            width: 60px;
+            height: 3px;
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+        .volume-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #6c5ce7;
+        }
+        .speed-group select {
+            background: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            border: none;
+            padding: 2px 8px;
+            border-radius: 30px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.7rem;
+            cursor: pointer;
+        }
+
+        /* ---------- VIDEO INFO ---------- */
+        .video-info {
+            padding: 1rem 1.4rem;
+            margin-top: 1rem;
+        }
+        .video-info h2 {
+            font-weight: 600;
+            font-size: 1.3rem;
+            word-break: break-word;
+        }
+        .meta-row {
+            opacity: 0.6;
+            font-size: 0.8rem;
+            margin: 4px 0 8px;
+        }
+        .action-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px 16px;
+            margin-top: 10px;
+            align-items: center;
+        }
+        .action-bar button,
+        .upload-label {
+            background: rgba(255, 255, 255, 0.06);
+            border: none;
+            padding: 5px 14px;
+            border-radius: 40px;
+            color: inherit;
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: 0.2s;
+            font-size: 0.85rem;
+        }
+        .action-bar button:hover,
+        .upload-label:hover {
+            background: rgba(108, 92, 231, 0.2);
+        }
+        .upload-label input {
+            display: none;
+        }
+
+        /* ---------- PLAYLIST SIDEBAR ---------- */
+        .playlist-sidebar {
+            padding: 1rem 0.8rem;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .playlist-sidebar h3 {
+            margin-bottom: 0.8rem;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            font-size: 1.1rem;
+        }
+        .playlist-item {
+            display: flex;
+            gap: 10px;
+            padding: 6px 8px;
+            border-radius: 18px;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-bottom: 6px;
+            align-items: center;
+        }
+        .playlist-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .playlist-item.active {
+            background: rgba(108, 92, 231, 0.25);
+            border-left: 4px solid #6c5ce7;
+        }
+        .playlist-item .pl-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .playlist-item .pl-info .pl-title {
+            font-weight: 500;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .playlist-item .pl-info .pl-duration {
+            font-size: 0.7rem;
+            opacity: 0.5;
+        }
+
+        /* ---------- FOOTER ---------- */
+        .glass-footer {
+            padding: 0.8rem 1.4rem;
+            border-radius: 40px;
+            margin-top: 1.2rem;
+            background: rgba(20, 20, 30, 0.5);
+            backdrop-filter: blur(6px);
+        }
+        .footer-content {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.8rem;
+        }
+        .social-icons a,
+        .contact-links a {
+            color: inherit;
+            margin: 0 4px;
+            opacity: 0.6;
+            transition: 0.2s;
+            text-decoration: none;
+        }
+        .social-icons a:hover {
+            opacity: 1;
+        }
+
+        /* ---------- TOAST ---------- */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 999;
+            max-width: 90%;
+        }
+        .toast {
+            background: #1a1a2e;
+            color: #eee;
+            padding: 10px 20px;
+            border-radius: 40px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+            border-left: 4px solid #6c5ce7;
+            animation: slideIn 0.4s ease;
+            font-weight: 400;
+            font-size: 0.9rem;
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* ---------- SCROLLBAR ---------- */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #6c5ce7;
+            border-radius: 10px;
+        }
+
+        /* ---------- RESPONSIVE ---------- */
+        @media (max-width: 640px) {
+            body {
+                padding: 0.4rem;
+            }
+            .glass-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+                padding: 0.6rem 1rem;
+                border-radius: 28px;
+            }
+            .nav-menu {
+                justify-content: center;
+                font-size: 0.75rem;
+                gap: 0.4rem;
+            }
+            .nav-menu a {
+                padding: 3px 8px;
+            }
+            .search-wrapper {
+                min-width: 100px;
+            }
+            .controls-row {
+                gap: 4px 6px;
+            }
+            .volume-group input[type="range"] {
+                width: 44px;
+            }
+            .ctrl-btn {
+                font-size: 0.85rem;
+                padding: 2px 4px;
+            }
+            .video-info h2 {
+                font-size: 1.1rem;
+            }
+            .action-bar button,
+            .upload-label {
+                font-size: 0.75rem;
+                padding: 4px 10px;
+            }
+            .playlist-item .pl-info .pl-title {
+                font-size: 0.8rem;
+            }
+            .glass-footer {
+                padding: 0.6rem 1rem;
+            }
+            .footer-content {
+                font-size: 0.7rem;
+                justify-content: center;
+                gap: 0.4rem;
+            }
+        }
+
+        /* ---------- ACCOUNT DROPDOWN ---------- */
+        .account-area { position: relative; display: flex; align-items: center; }
+        .account-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.06);
+            padding: 5px 12px 5px 6px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .account-chip .avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6c5ce7, #0084ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            flex-shrink: 0;
+        }
+        .account-dropdown {
+            position: absolute;
+            top: 110%;
+            right: 0;
+            background: #14141e;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 0.4rem;
+            min-width: 170px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: none;
+            z-index: 60;
+        }
+        .account-dropdown.open { display: block; }
+        .account-dropdown a,
+        .account-dropdown button {
+            width: 100%;
+            text-align: left;
+            background: none;
+            border: none;
+            color: #eee;
+            padding: 8px 10px;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+        .account-dropdown a:hover,
+        .account-dropdown button:hover {
+            background: rgba(255,255,255,0.06);
+        }
+
+        /* ---------- AUTH GATE ---------- */
+        #authGate {
+            position: fixed;
+            inset: 0;
+            background: #0b0b14;
+            z-index: 500;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        #authGate.active { display: flex; }
+        .auth-card {
+            width: 100%;
+            max-width: 380px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            padding: 1.6rem;
+        }
+        .auth-card .logo {
+            justify-content: center;
+            margin-bottom: 1.2rem;
+            font-size: 1.4rem;
+        }
+        .auth-tabs {
+            display: flex;
+            background: rgba(255,255,255,0.05);
+            border-radius: 30px;
+            padding: 4px;
+            margin-bottom: 1.4rem;
+        }
+        .auth-tabs button {
+            flex: 1;
+            padding: 8px 0;
+            border: none;
+            background: none;
+            color: #aaa;
+            font-family: inherit;
+            font-weight: 500;
+            font-size: 0.85rem;
+            border-radius: 26px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .auth-tabs button.active {
+            background: #6c5ce7;
+            color: #fff;
+        }
+        .auth-form { display: none; flex-direction: column; gap: 0.8rem; }
+        .auth-form.active { display: flex; }
+        .auth-form input {
+            width: 100%;
+            padding: 0.7rem 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+            color: #eee;
+            font-family: inherit;
+            font-size: 0.9rem;
+            outline: none;
+        }
+        .auth-form input:focus { border-color: #6c5ce7; }
+        .auth-form button.submit-btn {
+            padding: 0.75rem;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg, #6c5ce7, #0084ff);
+            color: #fff;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            margin-top: 0.3rem;
+        }
+        .auth-form button.submit-btn:disabled { opacity: 0.6; cursor: default; }
+        .auth-title { text-align: center; font-size: 1.1rem; font-weight: 600; margin-bottom: 0.3rem; }
+        .auth-subtitle { text-align: center; font-size: 0.8rem; color: #999; margin-bottom: 1.2rem; }
+        .auth-error {
+            background: rgba(255, 71, 87, 0.15);
+            color: #ff6b7a;
+            font-size: 0.8rem;
+            padding: 0.55rem 0.8rem;
+            border-radius: 10px;
+            display: none;
+        }
+        .auth-error.show { display: block; }
+
+        /* ---------- LIKE / DISLIKE STATES ---------- */
+        .action-bar button.active-like {
+            background: rgba(46, 204, 113, 0.25);
+            color: #2ecc71;
+        }
+        .action-bar button.active-dislike {
+            background: rgba(255, 71, 87, 0.25);
+            color: #ff4757;
+        }
+        .likers-row {
+            font-size: 0.78rem;
+            color: #999;
+            margin-top: 6px;
+            cursor: pointer;
+        }
+        .likers-row:hover { color: #ccc; text-decoration: underline; }
+
+        /* ---------- COMMENTS ---------- */
+        .comments-section {
+            margin-top: 1.2rem;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            padding-top: 1rem;
+        }
+        .comments-section h4 {
+            font-size: 0.95rem;
+            margin-bottom: 0.8rem;
+            font-weight: 600;
+        }
+        .comment-input-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 1rem;
+        }
+        .comment-input-row input {
+            flex: 1;
+            min-width: 0;
+            padding: 0.6rem 1rem;
+            border-radius: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+            color: #eee;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.85rem;
+            outline: none;
+        }
+        .comment-input-row input:focus { border-color: #6c5ce7; }
+        .comment-input-row button {
+            flex: 0 0 46px;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #6c5ce7, #0084ff);
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+        .comment-input-row button:disabled { opacity: 0.5; cursor: default; }
+        .comments-list {
+            max-height: 320px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-right: 4px;
+            scrollbar-width: thin;
+        }
+        .comment-item {
+            display: flex;
+            gap: 10px;
+        }
+        .comment-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+            color: #fff;
+            text-transform: uppercase;
+        }
+        .comment-body { flex: 1; min-width: 0; }
+        .comment-head {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .comment-username { font-weight: 600; font-size: 0.85rem; }
+        .comment-time { font-size: 0.7rem; color: #888; }
+        .comment-text {
+            font-size: 0.85rem;
+            line-height: 1.4;
+            word-break: break-word;
+            margin-top: 2px;
+        }
+        .comment-delete {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 0.75rem;
+            cursor: pointer;
+            margin-left: auto;
+        }
+        .comment-delete:hover { color: #ff4757; }
+        .comments-empty {
+            text-align: center;
+            color: #666;
+            font-size: 0.85rem;
+            padding: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- loading -->
+    <div id="loading-screen">
+        <div class="spinner"></div>
+        <p>loading …</p>
+    </div>
+
+    <div id="app" class="hidden">
+        <!-- header -->
+        <header class="glass-header">
+            <div class="logo"><i class="fas fa-play-circle"></i>Jay Player</div>
+            <nav class="nav-menu">
+                <a href="/" class="active" data-page="home">Home</a>
+                <a href="/chat.html" class="chat-link" data-page="chat">💬 Messenger</a>
+            </nav>
+            <div class="search-wrapper"><i class="fas fa-search"></i><input type="text" id="searchInput" placeholder="Search videos..." /></div>
+            <div class="account-area">
+                <div id="signedOutIndicator" class="user-profile" title="Sign in" style="display:none;"><i class="fas fa-user-circle"></i></div>
+                <div id="signedInIndicator" style="display:none; position:relative;">
+                    <div class="account-chip" id="accountChip">
+                        <div class="avatar" id="avatarInitial">?</div>
+                        <span id="accountIndicatorName">User</span>
+                        <i class="fas fa-chevron-down" style="font-size:0.7rem;opacity:0.6;"></i>
+                    </div>
+                    <div class="account-dropdown" id="accountDropdown">
+                        <a href="/chat.html"><i class="fas fa-comments"></i> Messenger</a>
+                        <a href="/account.html"><i class="fas fa-user"></i> My Account</a>
+                        <button id="signOutBtn"><i class="fas fa-right-from-bracket"></i> Sign out</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Auth Gate: sign in / create account required to use the site -->
+        <div id="authGate">
+            <div class="auth-card">
+                <div class="logo"><i class="fas fa-play-circle"></i>Jay Player</div>
+                <div class="auth-tabs">
+                    <button id="tabLogin" class="active">Sign In</button>
+                    <button id="tabRegister">Create Account</button>
+                </div>
+
+                <div id="loginForm" class="auth-form active">
+                    <div class="auth-title">Welcome back</div>
+                    <div class="auth-subtitle">Sign in to watch, like, and comment</div>
+                    <div class="auth-error" id="loginError"></div>
+                    <input type="text" id="loginUsername" placeholder="Username or email" autocomplete="username" />
+                    <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password" />
+                    <button class="submit-btn" id="loginSubmit">Sign In</button>
+                </div>
+
+                <div id="registerForm" class="auth-form">
+                    <div class="auth-title">Create your account</div>
+                    <div class="auth-subtitle">Your likes, views, and comments are saved to your account</div>
+                    <div class="auth-error" id="registerError"></div>
+                    <input type="text" id="registerUsername" placeholder="Username" autocomplete="username" />
+                    <input type="email" id="registerEmail" placeholder="Email (optional)" autocomplete="email" />
+                    <input type="password" id="registerPassword" placeholder="Password (min 6 characters)" autocomplete="new-password" />
+                    <input type="password" id="registerConfirm" placeholder="Confirm password" autocomplete="new-password" />
+                    <button class="submit-btn" id="registerSubmit">Create Account</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-grid">
+            <!-- Video Section -->
+            <section class="video-section">
+                <div class="player-wrapper" id="playerWrapper">
+                    <video id="videoPlayer" preload="metadata" crossorigin="anonymous"></video>
+                    <div class="video-placeholder" id="videoPlaceholder">
+                        <i class="fas fa-play-circle"></i>
+                        <span>Select a video to play</span>
+                    </div>
+                    <div class="custom-controls" id="customControls">
+                        <div class="progress-bar-container">
+                            <input type="range" class="progress-slider" id="progressSlider" value="0" min="0" max="100" step="0.1" />
+                            <div class="progress-time"><span id="currentTime">0:00</span><span id="totalDuration">0:00</span></div>
+                        </div>
+                        <div class="controls-row">
+                            <button id="playPauseBtn" class="ctrl-btn"><i class="fas fa-play"></i></button>
+                            <button id="skipBackBtn" class="ctrl-btn"><i class="fas fa-backward"></i> 10</button>
+                            <button id="skipForwardBtn" class="ctrl-btn"><i class="fas fa-forward"></i> 10</button>
+                            <div class="volume-group">
+                                <button id="muteBtn" class="ctrl-btn"><i class="fas fa-volume-up"></i></button>
+                                <input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="0.8" />
+                            </div>
+                            <div class="speed-group">
+                                <select id="playbackSpeed"><option value="0.5">0.5x</option><option value="1" selected>1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="2">2x</option></select>
+                            </div>
+                            <button id="theaterBtn" class="ctrl-btn"><i class="fas fa-expand-alt"></i></button>
+                            <button id="fullscreenBtn" class="ctrl-btn"><i class="fas fa-expand"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="video-info glass">
+                    <h2 id="videoTitle">Select a video</h2>
+                    <div class="meta-row"><span id="viewCount">0 views</span> · <span id="uploadDate">today</span></div>
+                    <p id="videoDesc">Click a video from the playlist to start watching</p>
+                    <div class="action-bar">
+                        <button id="likeBtn"><i class="far fa-thumbs-up"></i> <span id="likeCount">0</span></button>
+                        <button id="dislikeBtn"><i class="far fa-thumbs-down"></i> <span id="dislikeCount">0</span></button>
+                        <button id="shareBtn"><i class="fas fa-share-alt"></i> Share</button>
+                        <button id="saveBtn"><i class="far fa-bookmark"></i> Save</button>
+                        <label class="upload-label"><i class="fas fa-upload"></i> Upload<input type="file" id="fileUpload" accept="video/*" /></label>
+                    </div>
+                    <div class="likers-row hidden" id="likersRow"></div>
+
+                    <div class="comments-section">
+                        <h4><i class="far fa-comment-dots"></i> Comments (<span id="commentCount">0</span>)</h4>
+                        <div class="comment-input-row">
+                            <input type="text" id="commentInput" placeholder="Add a comment..." maxlength="1000" />
+                            <button id="commentSubmitBtn"><i class="fas fa-paper-plane"></i></button>
+                        </div>
+                        <div class="comments-list" id="commentsList"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Playlist Sidebar -->
+            <aside class="playlist-sidebar glass">
+                <h3><i class="fas fa-list-ul"></i> Playlist</h3>
+                <div id="playlistContainer" class="playlist-container"></div>
+            </aside>
+        </div>
+
+        <!-- Footer -->
+        <footer class="glass-footer">
+            <div class="footer-content">
+                <span>© <span id="copyrightYear">2026</span> JayBohol</span>
+                <div class="social-icons">
+                    <a href="https://www.facebook.com/profile.php?id=61590490534032" target="_blank" rel="noopener" title="Facebook"><i class="fab fa-facebook"></i></a>
+                    <a href="https://wa.me/639243901969" target="_blank" rel="noopener" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                    <a href="https://t.me/CerusAint" target="_blank" rel="noopener" title="Telegram"><i class="fab fa-telegram"></i></a>
+                </div>
+                <div class="contact-links">
+                    <a href="/account.html">My Account</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script>
+        // ============================================
+        // DOM REFS
+        // ============================================
+        const app = document.getElementById('app');
+        const loading = document.getElementById('loading-screen');
+        const video = document.getElementById('videoPlayer');
+        const videoPlaceholder = document.getElementById('videoPlaceholder');
+        const playBtn = document.getElementById('playPauseBtn');
+        const skipBack = document.getElementById('skipBackBtn');
+        const skipForward = document.getElementById('skipForwardBtn');
+        const progressSlider = document.getElementById('progressSlider');
+        const currentTimeSpan = document.getElementById('currentTime');
+        const durationSpan = document.getElementById('totalDuration');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const muteBtn = document.getElementById('muteBtn');
+        const speedSelect = document.getElementById('playbackSpeed');
+        const theaterBtn = document.getElementById('theaterBtn');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const videoTitle = document.getElementById('videoTitle');
+        const viewCount = document.getElementById('viewCount');
+        const uploadDate = document.getElementById('uploadDate');
+        const videoDesc = document.getElementById('videoDesc');
+        const likeBtn = document.getElementById('likeBtn');
+        const likeCount = document.getElementById('likeCount');
+        const dislikeBtn = document.getElementById('dislikeBtn');
+        const dislikeCount = document.getElementById('dislikeCount');
+        const shareBtn = document.getElementById('shareBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const fileUpload = document.getElementById('fileUpload');
+        const searchInput = document.getElementById('searchInput');
+        const playlistContainer = document.getElementById('playlistContainer');
+        const toastContainer = document.getElementById('toastContainer');
+        const playerWrapper = document.getElementById('playerWrapper');
+        const copyrightYear = document.getElementById('copyrightYear');
+
+        // Auth / account DOM refs
+        const authGate = document.getElementById('authGate');
+        const signedOutIndicator = document.getElementById('signedOutIndicator');
+        const signedInIndicator = document.getElementById('signedInIndicator');
+        const accountIndicatorName = document.getElementById('accountIndicatorName');
+        const avatarInitial = document.getElementById('avatarInitial');
+        const accountChip = document.getElementById('accountChip');
+        const accountDropdown = document.getElementById('accountDropdown');
+        const signOutBtn = document.getElementById('signOutBtn');
+        const tabLogin = document.getElementById('tabLogin');
+        const tabRegister = document.getElementById('tabRegister');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const loginError = document.getElementById('loginError');
+        const registerError = document.getElementById('registerError');
+
+        // Likes / comments DOM refs
+        const likersRow = document.getElementById('likersRow');
+        const commentCount = document.getElementById('commentCount');
+        const commentInput = document.getElementById('commentInput');
+        const commentSubmitBtn = document.getElementById('commentSubmitBtn');
+        const commentsList = document.getElementById('commentsList');
+
+        let currentUser = null;
+
+        // ============================================
+        // CONFIGURATION
+        // ============================================
+        const API_BASE = window.location.origin || 'https://jay-so2u.onrender.com';
+        const API_STREAM = `${API_BASE}/stream`;
+        const API_FILES = `${API_BASE}/files`;
+
+        let currentVideoIndex = 0;
+        let playlist = [];
+
+        // ============================================
+        // ACCOUNT (create account / sign in / sign out)
+        // Session is shared with chat.html via localStorage
+        // ============================================
+        const TOKEN_KEY = 'vupm_token';
+        const USER_KEY = 'vupm_user';
+
+        function saveSession(token, user) {
+            localStorage.setItem(TOKEN_KEY, token);
+            localStorage.setItem(USER_KEY, JSON.stringify(user));
+        }
+        function clearSession() {
+            localStorage.removeItem(TOKEN_KEY);
+            localStorage.removeItem(USER_KEY);
+        }
+        function getToken() { return localStorage.getItem(TOKEN_KEY); }
+        function authHeaders() {
+            const t = getToken();
+            return t ? { 'Authorization': 'Bearer ' + t } : {};
+        }
+
+        function showAuthGate() {
+            authGate.classList.add('active');
+            signedOutIndicator.style.display = 'flex';
+            signedInIndicator.style.display = 'none';
+        }
+
+        function showSignedInHeader(user) {
+            signedOutIndicator.style.display = 'none';
+            signedInIndicator.style.display = 'block';
+            accountIndicatorName.textContent = user.username;
+            avatarInitial.textContent = user.username.charAt(0);
+        }
+
+        tabLogin.addEventListener('click', () => {
+            tabLogin.classList.add('active');
+            tabRegister.classList.remove('active');
+            loginForm.classList.add('active');
+            registerForm.classList.remove('active');
+        });
+        tabRegister.addEventListener('click', () => {
+            tabRegister.classList.add('active');
+            tabLogin.classList.remove('active');
+            registerForm.classList.add('active');
+            loginForm.classList.remove('active');
+        });
+
+        function showFormError(el, msg) { el.textContent = msg; el.classList.add('show'); }
+        function hideFormError(el) { el.classList.remove('show'); }
+
+        document.getElementById('registerSubmit').addEventListener('click', async () => {
+            hideFormError(registerError);
+            const username = document.getElementById('registerUsername').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            const password = document.getElementById('registerPassword').value;
+            const confirm = document.getElementById('registerConfirm').value;
+
+            if (!username || !password) return showFormError(registerError, 'Username and password are required');
+            if (password !== confirm) return showFormError(registerError, 'Passwords do not match');
+
+            const btn = document.getElementById('registerSubmit');
+            btn.disabled = true;
+            btn.textContent = 'Creating account...';
+            try {
+                const res = await fetch(`${API_BASE}/api/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password })
+                });
+                const data = await res.json();
+                if (!res.ok || !data.success) return showFormError(registerError, data.message || 'Registration failed');
+                saveSession(data.token, data.user);
+                onAuthenticated(data.user);
+            } catch (err) {
+                showFormError(registerError, 'Could not reach the server. Try again.');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Create Account';
+            }
+        });
+
+        document.getElementById('loginSubmit').addEventListener('click', async () => {
+            hideFormError(loginError);
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            if (!username || !password) return showFormError(loginError, 'Please enter your username/email and password');
+
+            const btn = document.getElementById('loginSubmit');
+            btn.disabled = true;
+            btn.textContent = 'Signing in...';
+            try {
+                const res = await fetch(`${API_BASE}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+                if (!res.ok || !data.success) return showFormError(loginError, data.message || 'Sign in failed');
+                saveSession(data.token, data.user);
+                onAuthenticated(data.user);
+            } catch (err) {
+                showFormError(loginError, 'Could not reach the server. Try again.');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Sign In';
+            }
+        });
+
+        document.getElementById('loginPassword').addEventListener('keydown', e => {
+            if (e.key === 'Enter') document.getElementById('loginSubmit').click();
+        });
+        document.getElementById('registerConfirm').addEventListener('keydown', e => {
+            if (e.key === 'Enter') document.getElementById('registerSubmit').click();
+        });
+
+        accountChip.addEventListener('click', () => accountDropdown.classList.toggle('open'));
+        document.addEventListener('click', (e) => {
+            if (!accountChip.contains(e.target) && !accountDropdown.contains(e.target)) {
+                accountDropdown.classList.remove('open');
+            }
+        });
+
+        signOutBtn.addEventListener('click', async () => {
+            const token = getToken();
+            try {
+                if (token) await fetch(`${API_BASE}/api/auth/logout`, { method: 'POST', headers: authHeaders() });
+            } catch (e) { /* ignore */ }
+            clearSession();
+            currentUser = null;
+            accountDropdown.classList.remove('open');
+            showAuthGate();
+        });
+
+        function onAuthenticated(user) {
+            currentUser = user;
+            showSignedInHeader(user);
+            authGate.classList.remove('active');
+            startApp();
+        }
+
+        // ============================================
+        // HELPERS
+        // ============================================
+        function showToast(msg) {
+            const t = document.createElement('div');
+            t.className = 'toast';
+            t.textContent = msg;
+            toastContainer.appendChild(t);
+            setTimeout(() => { t.remove(); }, 3000);
+        }
+
+        function formatFileSize(bytes) {
+            if (!bytes) return '';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        function formatTime(seconds) {
+            if (!seconds || isNaN(seconds) || !isFinite(seconds)) return '0:00';
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return `${m}:${s.toString().padStart(2, '0')}`;
+        }
+
+        function stringToColor(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const hue = Math.abs(hash % 360);
+            return `hsl(${hue}, 60%, 25%)`;
+        }
+
+        function getVideoTitle(filename) {
+            let name = filename.replace(/\.[^/.]+$/, '');
+            name = name.replace(/[_-]/g, ' ');
+            name = name.split(' ').map(word => 
+                word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+            ).join(' ');
+            return name || 'Untitled Video';
+        }
+
+        // ============================================
+        // LOAD FILES
+        // ============================================
+        async function loadFiles() {
+            try {
+                const response = await fetch(API_FILES);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch files');
+                }
+                const data = await response.json();
+                
+                if (data.success && data.files) {
+                    playlist = data.files.map(file => ({
+                        id: file.id,
+                        title: getVideoTitle(file.filename),
+                        filename: file.filename,
+                        src: `${API_STREAM}/${file.id}.mp4`,
+                        duration: '0:00',
+                        views: 0,
+                        date: file.uploadDate ? new Date(file.uploadDate).toISOString().slice(0, 10) : 'today',
+                        desc: `Video: ${file.filename}`,
+                        fileSize: file.fileSize || 0
+                    }));
+                    
+                    if (playlist.length > 0) {
+                        loadVideo(0);
+                    }
+                    renderPlaylist();
+                    showToast(`Loaded ${playlist.length} videos`);
+                }
+            } catch (error) {
+                console.error('Error loading files:', error);
+                showToast('Could not load files from server');
+            }
+        }
+
+        // ============================================
+        // VIDEO FUNCTIONS
+        // ============================================
+        function loadVideo(index) {
+            if (index < 0 || index >= playlist.length) {
+                videoPlaceholder.classList.remove('hidden');
+                video.classList.add('hidden');
+                videoTitle.textContent = 'No videos available';
+                videoDesc.textContent = 'Upload a video to get started';
+                return;
+            }
+            currentVideoIndex = index;
+            const v = playlist[index];
+
+            videoPlaceholder.classList.add('hidden');
+            video.classList.remove('hidden');
+
+            video.src = v.src;
+            video.load();
+
+            videoTitle.textContent = v.title;
+            viewCount.textContent = v.views + ' views';
+            uploadDate.textContent = v.date || 'today';
+            videoDesc.textContent = v.desc || 'no description';
+
+            document.querySelectorAll('.playlist-item').forEach((el, i) => {
+                el.classList.toggle('active', i === index);
+            });
+
+            if (v.duration && v.duration !== '0:00') {
+                durationSpan.textContent = v.duration;
+            } else {
+                durationSpan.textContent = '0:00';
+            }
+
+            loadVideoEngagement(v.id);
+        }
+
+        // ============================================
+        // VIDEO ENGAGEMENT: views / likes / dislikes / comments
+        // All tied to the signed-in account, stored in MongoDB
+        // ============================================
+        let currentFileId = null;
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function formatCommentTime(iso) {
+            try {
+                const d = new Date(iso);
+                return d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' · ' +
+                       d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            } catch (e) { return ''; }
+        }
+
+        function updateLikeDislikeUI(data) {
+            likeCount.textContent = data.likeCount ?? 0;
+            dislikeCount.textContent = data.dislikeCount ?? 0;
+            likeBtn.classList.toggle('active-like', !!data.userLiked);
+            dislikeBtn.classList.toggle('active-dislike', !!data.userDisliked);
+            likeBtn.querySelector('i').className = data.userLiked ? 'fas fa-thumbs-up' : 'far fa-thumbs-up';
+            dislikeBtn.querySelector('i').className = data.userDisliked ? 'fas fa-thumbs-down' : 'far fa-thumbs-down';
+
+            const likers = data.likers || [];
+            if (likers.length === 0) {
+                likersRow.classList.add('hidden');
+                likersRow.textContent = '';
+            } else {
+                likersRow.classList.remove('hidden');
+                const shown = likers.slice(0, 3).join(', ');
+                const extra = likers.length > 3 ? ` and ${likers.length - 3} more` : '';
+                likersRow.textContent = `Liked by ${shown}${extra}`;
+                likersRow.title = likers.join(', ');
+            }
+        }
+
+        async function loadVideoEngagement(fileId) {
+            currentFileId = fileId;
+            likersRow.classList.add('hidden');
+            commentsList.innerHTML = '';
+            commentCount.textContent = '0';
+
+            try {
+                const res = await fetch(`${API_BASE}/api/videos/${fileId}/stats`, { headers: authHeaders() });
+                const data = await res.json();
+                if (data.success) {
+                    viewCount.textContent = (data.views || 0) + ' views';
+                    updateLikeDislikeUI(data);
+                }
+            } catch (e) { console.error('Stats load error:', e); }
+
+            // Register a view for this account (counts once per account per video)
+            fetch(`${API_BASE}/api/videos/${fileId}/view`, { method: 'POST', headers: authHeaders() })
+                .then(r => r.json())
+                .then(d => { if (d.success) viewCount.textContent = d.views + ' views'; })
+                .catch(() => {});
+
+            loadComments(fileId);
+        }
+
+        async function toggleLike() {
+            if (!currentFileId) return;
+            try {
+                const res = await fetch(`${API_BASE}/api/videos/${currentFileId}/like`, { method: 'POST', headers: authHeaders() });
+                const data = await res.json();
+                if (data.success) updateLikeDislikeUI(data);
+                else showToast(data.message || 'Could not update like');
+            } catch (e) { showToast('Network error updating like'); }
+        }
+
+        async function toggleDislike() {
+            if (!currentFileId) return;
+            try {
+                const res = await fetch(`${API_BASE}/api/videos/${currentFileId}/dislike`, { method: 'POST', headers: authHeaders() });
+                const data = await res.json();
+                if (data.success) updateLikeDislikeUI(data);
+                else showToast(data.message || 'Could not update dislike');
+            } catch (e) { showToast('Network error updating dislike'); }
+        }
+
+        function renderComments(comments) {
+            commentCount.textContent = comments.length;
+            commentsList.innerHTML = '';
+
+            if (comments.length === 0) {
+                commentsList.innerHTML = '<div class="comments-empty">No comments yet. Be the first to comment!</div>';
+                return;
+            }
+
+            comments.forEach(c => {
+                const item = document.createElement('div');
+                item.className = 'comment-item';
+
+                const avatar = document.createElement('div');
+                avatar.className = 'comment-avatar';
+                avatar.style.background = stringToColor(c.username);
+                avatar.textContent = c.username.charAt(0);
+
+                const body = document.createElement('div');
+                body.className = 'comment-body';
+
+                const head = document.createElement('div');
+                head.className = 'comment-head';
+                head.innerHTML = `<span class="comment-username">${escapeHtml(c.username)}</span><span class="comment-time">${formatCommentTime(c.timestamp)}</span>`;
+
+                if (currentUser && c.userId === currentUser.id) {
+                    const del = document.createElement('button');
+                    del.className = 'comment-delete';
+                    del.innerHTML = '<i class="fas fa-trash"></i>';
+                    del.addEventListener('click', () => deleteComment(c.id));
+                    head.appendChild(del);
+                }
+
+                const text = document.createElement('div');
+                text.className = 'comment-text';
+                text.innerHTML = escapeHtml(c.text).replace(/\n/g, '<br>');
+
+                body.appendChild(head);
+                body.appendChild(text);
+                item.appendChild(avatar);
+                item.appendChild(body);
+                commentsList.appendChild(item);
+            });
+
+            // Keep the newest comment in view without stealing page scroll
+            commentsList.scrollTop = commentsList.scrollHeight;
+        }
+
+        async function loadComments(fileId) {
+            try {
+                const res = await fetch(`${API_BASE}/api/videos/${fileId}/comments`);
+                const data = await res.json();
+                if (data.success) renderComments(data.comments);
+            } catch (e) {
+                console.error('Load comments error:', e);
+            }
+        }
+
+        async function submitComment() {
+            const text = commentInput.value.trim();
+            if (!text || !currentFileId) return;
+
+            commentSubmitBtn.disabled = true;
+            try {
+                const res = await fetch(`${API_BASE}/api/videos/${currentFileId}/comments`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+                    body: JSON.stringify({ text })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    commentInput.value = '';
+                    loadComments(currentFileId);
+                } else {
+                    showToast(data.message || 'Could not post comment');
+                }
+            } catch (e) {
+                showToast('Network error posting comment');
+            } finally {
+                commentSubmitBtn.disabled = false;
+            }
+        }
+
+        async function deleteComment(commentId) {
+            if (!currentFileId) return;
+            try {
+                const res = await fetch(`${API_BASE}/api/videos/${currentFileId}/comments/${commentId}`, {
+                    method: 'DELETE',
+                    headers: authHeaders()
+                });
+                const data = await res.json();
+                if (data.success) loadComments(currentFileId);
+                else showToast(data.message || 'Could not delete comment');
+            } catch (e) {
+                showToast('Network error deleting comment');
+            }
+        }
+
+        commentSubmitBtn.addEventListener('click', submitComment);
+        commentInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); submitComment(); }
+        });
+
+        function renderPlaylist(filter = '') {
+            const filtered = playlist.filter(v => v.title.toLowerCase().includes(filter.toLowerCase()));
+            playlistContainer.innerHTML = '';
+            if (filtered.length === 0) {
+                playlistContainer.innerHTML = `
+                    <div style="text-align:center;padding:20px;color:#666;font-size:0.9rem;">
+                        <i class="fas fa-video" style="font-size:2rem;display:block;margin-bottom:10px;"></i>
+                        ${playlist.length === 0 ? 'No videos uploaded yet.<br>Upload a video to get started!' : 'No matching videos'}
+                    </div>
+                `;
+                return;
+            }
+            filtered.forEach((v, idx) => {
+                const originalIdx = playlist.indexOf(v);
+                const div = document.createElement('div');
+                div.className = 'playlist-item' + (originalIdx === currentVideoIndex ? ' active' : '');
+                const color = stringToColor(v.title);
+                div.innerHTML = `
+                    <div style="width:64px;height:44px;border-radius:12px;background:${color};display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;">
+                        <i class="fas fa-play" style="color:rgba(255,255,255,0.7);"></i>
+                    </div>
+                    <div class="pl-info"><div class="pl-title">${v.title}</div><div class="pl-duration">${v.duration || '0:00'} ${v.fileSize ? '· ' + formatFileSize(v.fileSize) : ''}</div></div>
+                `;
+                div.addEventListener('click', () => { loadVideo(originalIdx); });
+                playlistContainer.appendChild(div);
+            });
+        }
+
+        // ============================================
+        // VIDEO CONTROLS
+        // ============================================
+        function togglePlay() {
+            if (video.paused) {
+                video.play().catch(e => showToast('Error playing video'));
+            } else {
+                video.pause();
+            }
+        }
+
+        function updatePlayButton() {
+            const icon = playBtn.querySelector('i');
+            if (video.paused) {
+                icon.className = 'fas fa-play';
+            } else {
+                icon.className = 'fas fa-pause';
+            }
+        }
+
+        function updateProgress() {
+            if (video.duration && isFinite(video.duration)) {
+                const pct = (video.currentTime / video.duration) * 100;
+                progressSlider.value = pct;
+                currentTimeSpan.textContent = formatTime(video.currentTime);
+                durationSpan.textContent = formatTime(video.duration);
+                if (playlist[currentVideoIndex] && playlist[currentVideoIndex].duration === '0:00' && video.duration) {
+                    playlist[currentVideoIndex].duration = formatTime(video.duration);
+                    renderPlaylist(searchInput.value);
+                }
+            }
+        }
+
+        // ============================================
+        // UPLOAD
+        // ============================================
+        async function uploadVideoToServer(file) {
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                showToast('Uploading...');
+                
+                const response = await fetch(`${API_BASE}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Upload failed: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast('Upload successful!');
+                    
+                    const newVideo = {
+                        id: data.fileId,
+                        title: file.name.replace(/\.[^/.]+$/, ''),
+                        filename: file.name,
+                        src: `${API_STREAM}/${data.fileId}.mp4`,
+                        duration: '0:00',
+                        views: 0,
+                        date: new Date().toISOString().slice(0, 10),
+                        desc: 'uploaded video',
+                        fileSize: file.size
+                    };
+                    playlist.push(newVideo);
+                    renderPlaylist(searchInput.value);
+                    loadVideo(playlist.length - 1);
+                    return true;
+                } else {
+                    showToast('Upload failed: ' + (data.message || 'Unknown error'));
+                    return false;
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                showToast('Upload error: ' + error.message);
+                return false;
+            }
+        }
+
+        // ============================================
+        // EVENT LISTENERS
+        // ============================================
+        playBtn.addEventListener('click', togglePlay);
+        video.addEventListener('play', updatePlayButton);
+        video.addEventListener('pause', updatePlayButton);
+        video.addEventListener('timeupdate', updateProgress);
+
+        video.addEventListener('loadedmetadata', () => {
+            durationSpan.textContent = formatTime(video.duration);
+            if (playlist[currentVideoIndex]) {
+                playlist[currentVideoIndex].duration = formatTime(video.duration);
+                renderPlaylist(searchInput.value);
+            }
+        });
+
+        skipBack.addEventListener('click', () => { video.currentTime = Math.max(0, video.currentTime - 10); });
+        skipForward.addEventListener('click', () => { video.currentTime = Math.min(video.duration, video.currentTime + 10); });
+
+        progressSlider.addEventListener('input', () => {
+            if (video.duration && isFinite(video.duration)) {
+                video.currentTime = (progressSlider.value / 100) * video.duration;
+            }
+        });
+
+        volumeSlider.addEventListener('input', () => {
+            video.volume = parseFloat(volumeSlider.value);
+            video.muted = false;
+            muteBtn.querySelector('i').className = video.volume > 0 ? 'fas fa-volume-up' : 'fas fa-volume-off';
+        });
+        muteBtn.addEventListener('click', () => {
+            video.muted = !video.muted;
+            muteBtn.querySelector('i').className = video.muted ? 'fas fa-volume-off' : 'fas fa-volume-up';
+            if (!video.muted) volumeSlider.value = video.volume;
+        });
+
+        speedSelect.addEventListener('change', () => { video.playbackRate = parseFloat(speedSelect.value); });
+
+        theaterBtn.addEventListener('click', () => {
+            playerWrapper.style.maxWidth = playerWrapper.style.maxWidth === '100%' ? '100%' : '100%';
+            playerWrapper.style.borderRadius = playerWrapper.style.borderRadius === '0' ? '28px' : '0';
+        });
+
+        fullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                playerWrapper.requestFullscreen?.();
+            } else {
+                document.exitFullscreen?.();
+            }
+        });
+
+        fileUpload.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file && file.type.startsWith('video/')) {
+                const success = await uploadVideoToServer(file);
+                if (success) fileUpload.value = '';
+            } else {
+                showToast('Please select a video file');
+            }
+        });
+
+        searchInput.addEventListener('input', () => { renderPlaylist(searchInput.value); });
+
+        likeBtn.addEventListener('click', () => toggleLike());
+        dislikeBtn.addEventListener('click', () => toggleDislike());
+        shareBtn.addEventListener('click', () => {
+            const v = playlist[currentVideoIndex];
+            if (v) {
+                navigator.clipboard?.writeText(v.src).then(() => {
+                    showToast('URL copied to clipboard!');
+                }).catch(() => {
+                    showToast('Share: ' + v.src);
+                });
+            }
+        });
+        saveBtn.addEventListener('click', () => showToast('Saved!'));
+
+        // ============================================
+        // KEYBOARD SHORTCUTS
+        // ============================================
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT') return;
+            switch (e.key) {
+                case ' ': e.preventDefault(); togglePlay(); break;
+                case 'ArrowLeft': e.preventDefault(); video.currentTime = Math.max(0, video.currentTime - 5); break;
+                case 'ArrowRight': e.preventDefault(); video.currentTime = Math.min(video.duration, video.currentTime + 5); break;
+                case 'f': e.preventDefault(); fullscreenBtn.click(); break;
+                case 'm': e.preventDefault(); muteBtn.click(); break;
+            }
+        });
+
+        // ============================================
+        // NAVIGATION - Mark active page
+        // ============================================
+        document.querySelectorAll('.nav-menu a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                // Don't prevent default - let the link work naturally
+                // Just mark the active state for visual feedback
+                document.querySelectorAll('.nav-menu a').forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // ============================================
+        // INIT
+        // ============================================
+        copyrightYear.textContent = new Date().getFullYear();
+
+        async function startApp() {
+            renderPlaylist();
+            await loadFiles();
+            setTimeout(() => {
+                loading.classList.add('hidden');
+                app.classList.remove('hidden');
+            }, 600);
+            video.controls = false;
+        }
+
+        async function init() {
+            const token = getToken();
+            const storedUser = (() => {
+                try { return JSON.parse(localStorage.getItem(USER_KEY) || 'null'); }
+                catch (e) { return null; }
+            })();
+
+            if (!token || !storedUser) {
+                loading.classList.add('hidden');
+                app.classList.remove('hidden');
+                showAuthGate();
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/api/auth/me`, { headers: authHeaders() });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    saveSession(token, data.user);
+                    onAuthenticated(data.user);
+                } else {
+                    clearSession();
+                    loading.classList.add('hidden');
+                    app.classList.remove('hidden');
+                    showAuthGate();
+                }
+            } catch (err) {
+                // Network hiccup — use the cached account so the UI still works
+                onAuthenticated(storedUser);
+            }
+        }
+
+        init();
+    </script>
+</body>
+    </html>

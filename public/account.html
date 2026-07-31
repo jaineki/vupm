@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Account · Jay Video Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #0b0b14;
+            color: #eee;
+            min-height: 100vh;
+            padding: 0.8rem;
+        }
+        .container { max-width: 700px; margin: 0 auto; }
+
+        .glass-header {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.7rem 1rem;
+            padding: 0.6rem 1.2rem;
+            margin-bottom: 1.2rem;
+            border-radius: 40px;
+            background: rgba(20, 20, 30, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .logo { font-weight: 700; font-size: 1.2rem; display: flex; align-items: center; gap: 6px; }
+        .logo i { color: #6c5ce7; }
+        .nav-menu { display: flex; gap: 0.5rem; font-size: 0.85rem; flex-wrap: wrap; }
+        .nav-menu a {
+            text-decoration: none; color: inherit; opacity: 0.7;
+            padding: 4px 12px; border-radius: 20px; white-space: nowrap;
+        }
+        .nav-menu a:hover { opacity: 1; background: rgba(255,255,255,0.05); }
+        .nav-menu a.active { opacity: 1; color: #0084ff; background: rgba(0,132,255,0.2); }
+
+        .card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            padding: 1.6rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .profile-head {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 1.4rem;
+        }
+        .big-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6c5ce7, #0084ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.6rem;
+            text-transform: uppercase;
+            flex-shrink: 0;
+        }
+        .profile-head h2 { font-size: 1.2rem; margin-bottom: 2px; }
+        .profile-head p { font-size: 0.8rem; color: #999; }
+
+        label {
+            display: block;
+            font-size: 0.8rem;
+            color: #aaa;
+            margin-bottom: 6px;
+            margin-top: 1rem;
+        }
+        input {
+            width: 100%;
+            padding: 0.7rem 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+            color: #eee;
+            font-family: inherit;
+            font-size: 0.9rem;
+            outline: none;
+        }
+        input:focus { border-color: #6c5ce7; }
+        input:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .hint {
+            font-size: 0.75rem;
+            color: #888;
+            margin-top: 6px;
+        }
+        .hint.cooldown { color: #f5a623; }
+
+        .submit-btn {
+            margin-top: 1.2rem;
+            padding: 0.75rem 1.4rem;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg, #6c5ce7, #0084ff);
+            color: #fff;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .form-msg {
+            font-size: 0.82rem;
+            padding: 0.55rem 0.8rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+            display: none;
+        }
+        .form-msg.error { display: block; background: rgba(255,71,87,0.15); color: #ff6b7a; }
+        .form-msg.success { display: block; background: rgba(46,204,113,0.15); color: #2ecc71; }
+
+        .signout-row { margin-top: 1.4rem; text-align: right; }
+        .signout-row button {
+            background: rgba(255,71,87,0.12);
+            color: #ff6b7a;
+            border: 1px solid rgba(255,71,87,0.25);
+            padding: 0.55rem 1rem;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        .signout-row button:hover { background: rgba(255,71,87,0.2); }
+
+        /* Auth gate (same pattern as chat.html / index.html) */
+        #authGate {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh;
+        }
+        #authGate.active { display: flex; }
+        .auth-card { width: 100%; max-width: 380px; }
+        .auth-tabs {
+            display: flex; background: rgba(255,255,255,0.05);
+            border-radius: 30px; padding: 4px; margin-bottom: 1.4rem;
+        }
+        .auth-tabs button {
+            flex: 1; padding: 8px 0; border: none; background: none; color: #aaa;
+            font-family: inherit; font-weight: 500; font-size: 0.85rem;
+            border-radius: 26px; cursor: pointer;
+        }
+        .auth-tabs button.active { background: #6c5ce7; color: #fff; }
+        .auth-form { display: none; flex-direction: column; gap: 0.8rem; }
+        .auth-form.active { display: flex; }
+        .auth-title { text-align: center; font-size: 1.1rem; font-weight: 600; margin-bottom: 0.3rem; }
+        .auth-subtitle { text-align: center; font-size: 0.8rem; color: #999; margin-bottom: 1.2rem; }
+
+        #accountView { display: none; }
+        #accountView.active { display: block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="glass-header">
+            <div class="logo"><i class="fas fa-play-circle"></i>Jay Player</div>
+            <nav class="nav-menu">
+                <a href="/">Home</a>
+                <a href="/chat.html">💬 Messenger</a>
+                <a href="/account.html" class="active">👤 Account</a>
+            </nav>
+        </header>
+
+        <!-- Auth Gate -->
+        <div id="authGate">
+            <div class="card auth-card">
+                <div class="auth-tabs">
+                    <button id="tabLogin" class="active">Sign In</button>
+                    <button id="tabRegister">Create Account</button>
+                </div>
+
+                <div id="loginForm" class="auth-form active">
+                    <div class="auth-title">Welcome back</div>
+                    <div class="auth-subtitle">Sign in to manage your account</div>
+                    <div class="form-msg error" id="loginError"></div>
+                    <input type="text" id="loginUsername" placeholder="Username or email" autocomplete="username" />
+                    <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password" />
+                    <button class="submit-btn" id="loginSubmit">Sign In</button>
+                </div>
+
+                <div id="registerForm" class="auth-form">
+                    <div class="auth-title">Create your account</div>
+                    <div class="auth-subtitle">Join Jay Video Hub</div>
+                    <div class="form-msg error" id="registerError"></div>
+                    <input type="text" id="registerUsername" placeholder="Username" autocomplete="username" />
+                    <input type="email" id="registerEmail" placeholder="Email (optional)" autocomplete="email" />
+                    <input type="password" id="registerPassword" placeholder="Password (min 6 characters)" autocomplete="new-password" />
+                    <input type="password" id="registerConfirm" placeholder="Confirm password" autocomplete="new-password" />
+                    <button class="submit-btn" id="registerSubmit">Create Account</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Account View -->
+        <div id="accountView">
+            <div class="card">
+                <div class="profile-head">
+                    <div class="big-avatar" id="bigAvatar">?</div>
+                    <div>
+                        <h2 id="displayUsername">Username</h2>
+                        <p id="memberSince">Member since —</p>
+                    </div>
+                </div>
+
+                <label for="usernameInput">Username</label>
+                <input type="text" id="usernameInput" maxlength="30" />
+                <p class="hint" id="usernameHint">You can change your username once every 7 days.</p>
+
+                <div class="form-msg" id="profileMsg"></div>
+
+                <button class="submit-btn" id="saveUsernameBtn">Save changes</button>
+
+                <div class="signout-row">
+                    <button id="signOutBtn"><i class="fas fa-right-from-bracket"></i> Sign out</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        const TOKEN_KEY = 'vupm_token';
+        const USER_KEY = 'vupm_user';
+
+        function saveSession(token, user) {
+            localStorage.setItem(TOKEN_KEY, token);
+            localStorage.setItem(USER_KEY, JSON.stringify(user));
+        }
+        function clearSession() {
+            localStorage.removeItem(TOKEN_KEY);
+            localStorage.removeItem(USER_KEY);
+        }
+        function getToken() { return localStorage.getItem(TOKEN_KEY); }
+        function authHeaders() {
+            const t = getToken();
+            return t ? { 'Authorization': 'Bearer ' + t } : {};
+        }
+
+        const authGate = document.getElementById('authGate');
+        const accountView = document.getElementById('accountView');
+        const tabLogin = document.getElementById('tabLogin');
+        const tabRegister = document.getElementById('tabRegister');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const loginError = document.getElementById('loginError');
+        const registerError = document.getElementById('registerError');
+
+        const bigAvatar = document.getElementById('bigAvatar');
+        const displayUsername = document.getElementById('displayUsername');
+        const memberSince = document.getElementById('memberSince');
+        const usernameInput = document.getElementById('usernameInput');
+        const usernameHint = document.getElementById('usernameHint');
+        const profileMsg = document.getElementById('profileMsg');
+        const saveUsernameBtn = document.getElementById('saveUsernameBtn');
+        const signOutBtn = document.getElementById('signOutBtn');
+
+        let currentUser = null;
+
+        tabLogin.addEventListener('click', () => {
+            tabLogin.classList.add('active'); tabRegister.classList.remove('active');
+            loginForm.classList.add('active'); registerForm.classList.remove('active');
+        });
+        tabRegister.addEventListener('click', () => {
+            tabRegister.classList.add('active'); tabLogin.classList.remove('active');
+            registerForm.classList.add('active'); loginForm.classList.remove('active');
+        });
+
+        function showGate() {
+            authGate.classList.add('active');
+            accountView.classList.remove('active');
+        }
+
+        function showAccount(user) {
+            currentUser = user;
+            authGate.classList.remove('active');
+            accountView.classList.add('active');
+            renderProfile(user);
+        }
+
+        function renderProfile(user) {
+            bigAvatar.textContent = user.username.charAt(0);
+            displayUsername.textContent = user.username;
+            usernameInput.value = user.username;
+
+            try {
+                const created = new Date(user.createdAt);
+                memberSince.textContent = 'Member since ' + created.toLocaleDateString([], { year: 'numeric', month: 'long' });
+            } catch (e) { memberSince.textContent = ''; }
+
+            if (user.lastUsernameChangeAt) {
+                const nextAllowed = new Date(new Date(user.lastUsernameChangeAt).getTime() + 7 * 24 * 60 * 60 * 1000);
+                if (nextAllowed > new Date()) {
+                    usernameInput.disabled = true;
+                    saveUsernameBtn.disabled = true;
+                    usernameHint.textContent = `You can change your username again on ${nextAllowed.toLocaleDateString()}.`;
+                    usernameHint.classList.add('cooldown');
+                    return;
+                }
+            }
+            usernameInput.disabled = false;
+            saveUsernameBtn.disabled = false;
+            usernameHint.textContent = 'You can change your username once every 7 days.';
+            usernameHint.classList.remove('cooldown');
+        }
+
+        function showMsg(el, msg, type) {
+            el.textContent = msg;
+            el.className = 'form-msg ' + type;
+        }
+
+        document.getElementById('registerSubmit').addEventListener('click', async () => {
+            registerError.className = 'form-msg';
+            const username = document.getElementById('registerUsername').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            const password = document.getElementById('registerPassword').value;
+            const confirm = document.getElementById('registerConfirm').value;
+
+            if (!username || !password) return showMsg(registerError, 'Username and password are required', 'error');
+            if (password !== confirm) return showMsg(registerError, 'Passwords do not match', 'error');
+
+            try {
+                const res = await fetch(`${API_BASE}/api/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password })
+                });
+                const data = await res.json();
+                if (!res.ok || !data.success) return showMsg(registerError, data.message || 'Registration failed', 'error');
+                saveSession(data.token, data.user);
+                showAccount(data.user);
+            } catch (e) {
+                showMsg(registerError, 'Could not reach the server. Try again.', 'error');
+            }
+        });
+
+        document.getElementById('loginSubmit').addEventListener('click', async () => {
+            loginError.className = 'form-msg';
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            if (!username || !password) return showMsg(loginError, 'Please enter your username/email and password', 'error');
+
+            try {
+                const res = await fetch(`${API_BASE}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+                if (!res.ok || !data.success) return showMsg(loginError, data.message || 'Sign in failed', 'error');
+                saveSession(data.token, data.user);
+                showAccount(data.user);
+            } catch (e) {
+                showMsg(loginError, 'Could not reach the server. Try again.', 'error');
+            }
+        });
+
+        saveUsernameBtn.addEventListener('click', async () => {
+            const newUsername = usernameInput.value.trim();
+            profileMsg.className = 'form-msg';
+
+            if (!newUsername) return showMsg(profileMsg, 'Username cannot be empty', 'error');
+
+            saveUsernameBtn.disabled = true;
+            saveUsernameBtn.textContent = 'Saving...';
+
+            try {
+                const res = await fetch(`${API_BASE}/api/auth/profile`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+                    body: JSON.stringify({ username: newUsername })
+                });
+                const data = await res.json();
+
+                if (!res.ok || !data.success) {
+                    showMsg(profileMsg, data.message || 'Could not update username', 'error');
+                    saveUsernameBtn.disabled = false;
+                    return;
+                }
+
+                saveSession(data.token, data.user);
+                showMsg(profileMsg, 'Username updated!', 'success');
+                renderProfile(data.user);
+            } catch (e) {
+                showMsg(profileMsg, 'Network error. Try again.', 'error');
+                saveUsernameBtn.disabled = false;
+            } finally {
+                saveUsernameBtn.textContent = 'Save changes';
+            }
+        });
+
+        signOutBtn.addEventListener('click', async () => {
+            const token = getToken();
+            try {
+                if (token) await fetch(`${API_BASE}/api/auth/logout`, { method: 'POST', headers: authHeaders() });
+            } catch (e) { /* ignore */ }
+            clearSession();
+            currentUser = null;
+            showGate();
+        });
+
+        async function init() {
+            const token = getToken();
+            if (!token) { showGate(); return; }
+
+            try {
+                const res = await fetch(`${API_BASE}/api/auth/me`, { headers: authHeaders() });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    saveSession(token, data.user);
+                    showAccount(data.user);
+                } else {
+                    clearSession();
+                    showGate();
+                }
+            } catch (e) {
+                showGate();
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
